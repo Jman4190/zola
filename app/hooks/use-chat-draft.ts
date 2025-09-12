@@ -1,12 +1,21 @@
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 export function useChatDraft(chatId: string | null) {
   const storageKey = chatId ? `chat-draft-${chatId}` : "chat-draft-new"
 
-  const [draftValue, setDraftValueState] = useState<string>(() => {
-    if (typeof window === "undefined") return ""
-    return localStorage.getItem(storageKey) || ""
-  })
+  // Start with an empty draft on both server and client to avoid SSR/CSR mismatches.
+  // Read from localStorage after mount.
+  const [draftValue, setDraftValueState] = useState<string>("")
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      const stored = localStorage.getItem(storageKey) || ""
+      setDraftValueState(stored)
+    } catch {
+      // noop
+    }
+  }, [storageKey])
 
   const setDraftValue = useCallback(
     (value: string) => {

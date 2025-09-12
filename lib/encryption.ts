@@ -1,16 +1,38 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto"
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY
-if (!ENCRYPTION_KEY) {
-  throw new Error("ENCRYPTION_KEY is required")
-}
 const ALGORITHM = "aes-256-gcm"
 
-const key = Buffer.from(ENCRYPTION_KEY!, "base64")
+function resolveKey(): Buffer {
+  const envKey = process.env.ENCRYPTION_KEY
+  if (envKey) {
+    try {
+      const decoded = Buffer.from(envKey, "base64")
+      if (decoded.length === 32) {
+        return decoded
+      }
+    } catch {
+      // fallthrough to error handling below
+    }
+  }
 
-if (key.length !== 32) {
-  throw new Error("ENCRYPTION_KEY must be 32 bytes long")
+  // In development, fall back to an ephemeral key so the app can run.
+  if (process.env.NODE_ENV !== "production") {
+    const generated = randomBytes(32)
+    // eslint-disable-next-line no-console
+    console.warn(
+      envKey
+        ? "[encryption] ENCRYPTION_KEY is invalid. Using ephemeral dev key."
+        : "[encryption] ENCRYPTION_KEY not set. Using ephemeral dev key."
+    )
+    return generated
+  }
+
+  throw new Error(
+    "ENCRYPTION_KEY must be set to a base64-encoded 32-byte key (AES-256)."
+  )
 }
+
+const key = resolveKey()
 
 export function encryptKey(plaintext: string): {
   encrypted: string

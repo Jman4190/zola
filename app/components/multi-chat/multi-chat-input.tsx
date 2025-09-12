@@ -9,7 +9,7 @@ import {
 } from "@/components/prompt-kit/prompt-input"
 import { Button } from "@/components/ui/button"
 import { ArrowUp, Stop } from "@phosphor-icons/react"
-import React, { useCallback } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 
 type MultiChatInputProps = {
   value: string
@@ -77,6 +77,18 @@ export function MultiChatInput({
     [isSubmitting, anyLoading, onSend, status, value]
   )
 
+  // Hydration-safe disabled computation
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  const isDisabled =
+    !mounted ||
+    !value ||
+    isSubmitting ||
+    anyLoading ||
+    isOnlyWhitespace(value) ||
+    selectedModelIds.length === 0
+
   return (
     <div className="relative flex w-full flex-col gap-4">
       <div className="relative order-2 px-2 pb-3 sm:pb-4 md:order-1">
@@ -104,13 +116,7 @@ export function MultiChatInput({
               <Button
                 size="sm"
                 className="size-9 rounded-full transition-all duration-300 ease-out"
-                disabled={
-                  !value ||
-                  isSubmitting ||
-                  anyLoading ||
-                  isOnlyWhitespace(value) ||
-                  selectedModelIds.length === 0
-                }
+                disabled={isDisabled}
                 type="button"
                 onClick={handleSend}
                 aria-label={status === "streaming" ? "Stop" : "Send message"}

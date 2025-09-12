@@ -104,6 +104,16 @@ export function useChatCore({
     onError: handleError,
   })
 
+  // After mount, if a draft is loaded from localStorage, sync it into the chat input once
+  const appliedDraftRef = useRef(false)
+  useEffect(() => {
+    if (appliedDraftRef.current) return
+    if (draftValue && !input) {
+      setInput(draftValue)
+      appliedDraftRef.current = true
+    }
+  }, [draftValue, input, setInput])
+
   // Handle search params on mount
   useEffect(() => {
     if (prompt && typeof window !== "undefined") {
