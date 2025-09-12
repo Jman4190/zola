@@ -1,4 +1,4 @@
-import { createGuestServerClient } from "@/lib/supabase/server-guest"
+import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: Request) {
   try {
@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       })
     }
 
-    const supabase = await createGuestServerClient()
+    const supabase = await createClient()
     if (!supabase) {
       console.log("Supabase not enabled, skipping guest creation.")
       return new Response(

@@ -1,7 +1,6 @@
 import { MODEL_DEFAULT } from "@/lib/config"
 import { isSupabaseEnabled } from "@/lib/supabase/config"
 import { createClient } from "@/lib/supabase/server"
-import { createGuestServerClient } from "@/lib/supabase/server-guest"
 import { NextResponse } from "next/server"
 
 export async function GET(request: Request) {
@@ -22,9 +21,8 @@ export async function GET(request: Request) {
   }
 
   const supabase = await createClient()
-  const supabaseAdmin = await createGuestServerClient()
 
-  if (!supabase || !supabaseAdmin) {
+  if (!supabase) {
     return NextResponse.redirect(
       `${origin}/auth/error?message=${encodeURIComponent("Supabase is not enabled in this deployment.")}`
     )
@@ -47,21 +45,26 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Try to insert user only if not exists
-    const { error: insertError } = await supabaseAdmin.from("users").insert({
-      id: user.id,
-      email: user.email,
-      created_at: new Date().toISOString(),
-      message_count: 0,
-      premium: false,
-      favorite_models: [MODEL_DEFAULT],
-    })
+    // Upsert user using the authenticated session (RLS allows insert when id = auth.uid())
+    const { error: upsertError } = await supabase
+      .from("users")
+      .upsert(
+        {
+          id: user.id,
+          email: user.email,
+          created_at: new Date().toISOString(),
+          message_count: 0,
+          premium: false,
+          favorite_models: [MODEL_DEFAULT],
+        },
+        { onConflict: "id" }
+      )
 
-    if (insertError && insertError.code !== "23505") {
-      console.error("Error inserting user:", insertError)
+    if (upsertError) {
+      console.error("Error upserting user:", upsertError)
     }
   } catch (err) {
-    console.error("Unexpected user insert error:", err)
+    console.error("Unexpected user upsert error:", err)
   }
 
   const host = request.headers.get("host")

@@ -16,19 +16,49 @@ export type Database = {
           id: string
           name: string
           user_id: string
-          created_at: string | null
+          description: string | null
+          template_id: string | null
+          status: string
+          budget_min: number | null
+          budget_max: number | null
+          start_date: string | null
+          target_completion_date: string | null
+          location: string | null
+          rooms: Json | null
+          created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
           name: string
           user_id: string
-          created_at?: string | null
+          description?: string | null
+          template_id?: string | null
+          status?: string
+          budget_min?: number | null
+          budget_max?: number | null
+          start_date?: string | null
+          target_completion_date?: string | null
+          location?: string | null
+          rooms?: Json | null
+          created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
           name?: string
           user_id?: string
-          created_at?: string | null
+          description?: string | null
+          template_id?: string | null
+          status?: string
+          budget_min?: number | null
+          budget_max?: number | null
+          start_date?: string | null
+          target_completion_date?: string | null
+          location?: string | null
+          rooms?: Json | null
+          created_at?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -43,7 +73,7 @@ export type Database = {
       chat_attachments: {
         Row: {
           chat_id: string
-          created_at: string
+          created_at: string | null
           file_name: string | null
           file_size: number | null
           file_type: string | null
@@ -53,7 +83,7 @@ export type Database = {
         }
         Insert: {
           chat_id: string
-          created_at?: string
+          created_at?: string | null
           file_name?: string | null
           file_size?: number | null
           file_type?: string | null
@@ -63,7 +93,7 @@ export type Database = {
         }
         Update: {
           chat_id?: string
-          created_at?: string
+          created_at?: string | null
           file_name?: string | null
           file_size?: number | null
           file_type?: string | null
@@ -94,6 +124,7 @@ export type Database = {
           updated_at: string | null
           id: string
           model: string | null
+          system_prompt: string | null
           project_id: string | null
           title: string | null
           user_id: string
@@ -106,6 +137,7 @@ export type Database = {
           updated_at?: string | null
           id?: string
           model?: string | null
+          system_prompt?: string | null
           project_id?: string | null
           title?: string | null
           user_id: string
@@ -118,6 +150,7 @@ export type Database = {
           updated_at?: string | null
           id?: string
           model?: string | null
+          system_prompt?: string | null
           project_id?: string | null
           title?: string | null
           user_id?: string
@@ -141,6 +174,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      conversations: {
+        Row: {
+          id: string
+          user_id: string | null
+          project_id: string | null
+          title: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          project_id?: string | null
+          title?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          project_id?: string | null
+          title?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_templates: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          category: string
+          default_rooms: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          category: string
+          default_rooms?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          category?: string
+          default_rooms?: Json | null
+          created_at?: string
+        }
+        Relationships: []
       }
       messages: {
         Row: {

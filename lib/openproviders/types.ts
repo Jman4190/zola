@@ -50,12 +50,7 @@ export type MistralModel =
   | "open-mixtral-8x7b"
   | "open-mixtral-8x22b"
 
-export type PerplexityModel = 
-  | "sonar"
-  | "sonar-pro"
-  | "sonar-deep-research"
-  | "sonar-reasoning-pro"
-  | "sonar-reasoning"
+// Removed: Perplexity models (restricting to OpenAI and Google)
 
 export type GeminiModel =
   | "gemini-2.0-flash-001"
@@ -120,29 +115,6 @@ export type OpenRouterModel =
   | "openrouter:openai/o4-mini"
   | "openrouter:x-ai/grok-3-mini-beta"
   | "openrouter:google/gemini-2.5-flash-preview-05-20"
-
-// Static Ollama models for type safety
-export type StaticOllamaModel = "llama3.2:latest" | "qwen2.5-coder:latest"
-
-// Dynamic Ollama model type - allows any string for auto-detected models
-export type OllamaModel = StaticOllamaModel | (string & {})
-
-export type Provider =
-  | "openai"
-  | "mistral"
-  | "perplexity"
-  | "google"
-  | "anthropic"
-  | "xai"
-  | "ollama"
-  | "openrouter"
-
-export type SupportedModel =
-  | OpenAIModel
-  | MistralModel
-  | GeminiModel
-  | PerplexityModel
-  | AnthropicModel
-  | XaiModel
-  | OllamaModel
-  | OpenRouterModel
+// Removed: Ollama types (restricting to OpenAI and Google)
+export type Provider = "openai" | "google"
+export type SupportedModel = OpenAIModel | GeminiModel

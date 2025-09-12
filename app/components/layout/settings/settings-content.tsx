@@ -20,7 +20,6 @@ import { LayoutSettings } from "./appearance/layout-settings"
 import { ThemeSelection } from "./appearance/theme-selection"
 import { ConnectionsPlaceholder } from "./connections/connections-placeholder"
 import { DeveloperTools } from "./connections/developer-tools"
-import { OllamaSection } from "./connections/ollama-section"
 import { AccountManagement } from "./general/account-management"
 import { UserProfile } from "./general/user-profile"
 import { ModelsSettings } from "./models/models-settings"
@@ -131,8 +130,7 @@ export function SettingsContent({
             </TabsContent>
 
             <TabsContent value="connections" className="space-y-6 px-6">
-              {!isDev && <ConnectionsPlaceholder />}
-              {isDev && <OllamaSection />}
+              <ConnectionsPlaceholder />
               {isDev && <DeveloperTools />}
             </TabsContent>
           </div>
@@ -218,8 +216,7 @@ export function SettingsContent({
               </TabsContent>
 
               <TabsContent value="connections" className="mt-0 space-y-6">
-                {!isDev && <ConnectionsPlaceholder />}
-                {isDev && <OllamaSection />}
+                <ConnectionsPlaceholder />
                 {isDev && <DeveloperTools />}
               </TabsContent>
             </div>

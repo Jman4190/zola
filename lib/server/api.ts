@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server"
-import { createGuestServerClient } from "@/lib/supabase/server-guest"
 import { isSupabaseEnabled } from "../supabase/config"
 
 /**
@@ -16,9 +15,7 @@ export async function validateUserIdentity(
     return null
   }
 
-  const supabase = isAuthenticated
-    ? await createClient()
-    : await createGuestServerClient()
+  const supabase = await createClient()
 
   if (!supabase) {
     throw new Error("Failed to initialize Supabase client")

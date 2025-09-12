@@ -1,12 +1,7 @@
 "use client"
 
-import ClaudeIcon from "@/components/icons/claude"
 import GoogleIcon from "@/components/icons/google"
-import MistralIcon from "@/components/icons/mistral"
 import OpenAIIcon from "@/components/icons/openai"
-import OpenRouterIcon from "@/components/icons/openrouter"
-import PerplexityIcon from "@/components/icons/perplexity"
-import XaiIcon from "@/components/icons/xai"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,28 +35,12 @@ type Provider = {
 
 const PROVIDERS: Provider[] = [
   {
-    id: "openrouter",
-    name: "OpenRouter",
-    icon: OpenRouterIcon,
-    placeholder: "sk-or-v1-...",
-    getKeyUrl: "https://openrouter.ai/settings/keys",
-    defaultKey: "sk-or-v1-............",
-  },
-  {
     id: "openai",
     name: "OpenAI",
     icon: OpenAIIcon,
     placeholder: "sk-...",
     getKeyUrl: "https://platform.openai.com/api-keys",
     defaultKey: "sk-............",
-  },
-  {
-    id: "mistral",
-    name: "Mistral",
-    icon: MistralIcon,
-    placeholder: "...",
-    getKeyUrl: "https://console.mistral.ai/api-keys/",
-    defaultKey: "............",
   },
   {
     id: "google",
@@ -71,36 +50,12 @@ const PROVIDERS: Provider[] = [
     getKeyUrl: "https://ai.google.dev/gemini-api/docs/api-key",
     defaultKey: "AIza............",
   },
-  {
-    id: "perplexity",
-    name: "Perplexity",
-    icon: PerplexityIcon,
-    placeholder: "pplx-...",
-    getKeyUrl: "https://docs.perplexity.ai/guides/getting-started",
-    defaultKey: "pplx-............",
-  },
-  {
-    id: "xai",
-    name: "XAI",
-    icon: XaiIcon,
-    placeholder: "xai-...",
-    getKeyUrl: "https://console.x.ai/",
-    defaultKey: "xai-............",
-  },
-  {
-    id: "anthropic",
-    name: "Claude",
-    icon: ClaudeIcon,
-    placeholder: "sk-ant-...",
-    getKeyUrl: "https://console.anthropic.com/settings/keys",
-    defaultKey: "sk-ant-............",
-  },
 ]
 
 export function ByokSection() {
   const queryClient = useQueryClient()
   const { userKeyStatus, refreshAll } = useModel()
-  const [selectedProvider, setSelectedProvider] = useState<string>("openrouter")
+  const [selectedProvider, setSelectedProvider] = useState<string>("openai")
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({})
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [providerToDelete, setProviderToDelete] = useState<string>("")
