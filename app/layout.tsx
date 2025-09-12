@@ -28,7 +28,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Houzz Agent",
   description:
-    "Prototype built using Zola which is the open-source interface for AI chat.",
+    "Prototype built using Houzz which is the open-source interface for AI chat.",
 }
 
 export default async function RootLayout({
@@ -46,7 +46,7 @@ export default async function RootLayout({
         <Script
           defer
           src="https://assets.onedollarstats.com/stonks.js"
-          {...(isDev ? { "data-debug": "zola.chat" } : {})}
+          {...(isDev ? { "data-debug": "houzz.com" } : {})}
         />
       ) : null}
       <body
