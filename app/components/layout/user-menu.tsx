@@ -40,18 +40,29 @@ export function UserMenu() {
     <DropdownMenu open={isMenuOpen} onOpenChange={setMenuOpen} modal={false}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <DropdownMenuTrigger>
-            <Avatar className="bg-background hover:bg-muted">
-              <AvatarImage src={user?.profile_image ?? undefined} />
-              <AvatarFallback>{user?.display_name?.charAt(0)}</AvatarFallback>
-            </Avatar>
+          <DropdownMenuTrigger className="w-full">
+            <div className="hover:bg-muted flex w-full items-center gap-2 rounded-md p-2">
+              <Avatar className="bg-background hover:bg-muted">
+                <AvatarImage src={user?.profile_image ?? undefined} />
+                <AvatarFallback>{user?.display_name?.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col text-left">
+                <div className="text-sidebar-foreground text-sm font-medium">
+                  {user?.display_name || user?.email || 'Profile'}
+                </div>
+                <div className="text-sidebar-foreground/70 text-xs">
+                  Manage your account
+                </div>
+              </div>
+            </div>
           </DropdownMenuTrigger>
         </TooltipTrigger>
         <TooltipContent>Profile</TooltipContent>
       </Tooltip>
       <DropdownMenuContent
         className="w-56"
-        align="end"
+        align="start"
+        side="right"
         forceMount
         onCloseAutoFocus={(e) => e.preventDefault()}
         onInteractOutside={(e) => {

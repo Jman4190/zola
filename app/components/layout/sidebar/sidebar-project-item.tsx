@@ -201,7 +201,7 @@ export function SidebarProjectItem({ project }: SidebarProjectItemProps) {
 
   // Memoize computed values
   const isActive = useMemo(
-    () => pathname.startsWith(`/p/${project.id}`) || isEditing || isMenuOpen,
+    () => pathname.startsWith(`/project/${project.id}`) || isEditing || isMenuOpen,
     [pathname, project.id, isEditing, isMenuOpen]
   )
 
@@ -265,7 +265,7 @@ export function SidebarProjectItem({ project }: SidebarProjectItemProps) {
       ) : (
         <>
           <Link
-            href={`/p/${project.id}`}
+            href={`/project/${project.id}`}
             className="block w-full"
             prefetch
             onClick={handleLinkClick}

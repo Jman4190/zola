@@ -13,15 +13,18 @@ import {
 import { useChats } from "@/lib/chat-store/chats/provider"
 import {
   ChatTeardropText,
-  GithubLogo,
+  House,
   MagnifyingGlass,
   NotePencilIcon,
+  User,
   X,
 } from "@phosphor-icons/react"
 import { Pin } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { useMemo } from "react"
+import { useUser } from "@/lib/user-store/provider"
 import { HistoryTrigger } from "../../history/history-trigger"
+import { UserMenu } from "../user-menu"
 import { SidebarList } from "./sidebar-list"
 import { SidebarProject } from "./sidebar-project"
 
@@ -31,6 +34,7 @@ export function AppSidebar() {
   const { chats, pinnedChats, isLoading } = useChats()
   const params = useParams<{ chatId: string }>()
   const currentChatId = params.chatId
+  const { user } = useUser()
 
   const groupedChats = useMemo(() => {
     const result = groupChatsByDate(chats, "")
@@ -90,6 +94,16 @@ export function AppSidebar() {
               }
               hasPopover={false}
             />
+            <button
+              className="hover:bg-accent/80 hover:text-foreground text-primary group/all-projects relative inline-flex w-full items-center rounded-md bg-transparent px-2 py-2 text-sm transition-colors"
+              type="button"
+              onClick={() => router.push("/projects")}
+            >
+              <div className="flex items-center gap-2">
+                <House size={20} />
+                All Projects
+              </div>
+            </button>
           </div>
           <SidebarProject />
           {isLoading ? (
@@ -131,24 +145,7 @@ export function AppSidebar() {
         </ScrollArea>
       </SidebarContent>
       <SidebarFooter className="border-border/40 mb-2 border-t p-3">
-        <a
-          href="https://github.com/ibelick/zola"
-          className="hover:bg-muted flex items-center gap-2 rounded-md p-2"
-          target="_blank"
-          aria-label="Star the repo on GitHub"
-        >
-          <div className="rounded-full border p-1">
-            <GithubLogo className="size-4" />
-          </div>
-          <div className="flex flex-col">
-            <div className="text-sidebar-foreground text-sm font-medium">
-              Houzz is open source
-            </div>
-            <div className="text-sidebar-foreground/70 text-xs">
-              Star the repo on GitHub!
-            </div>
-          </div>
-        </a>
+        <UserMenu />
       </SidebarFooter>
     </Sidebar>
   )

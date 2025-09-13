@@ -22,11 +22,55 @@ export async function POST(request: Request) {
 
     const userId = authData.user.id
 
-    const { name } = await request.json()
+    const {
+      name,
+      description,
+      template_id,
+      location,
+      budget_min,
+      budget_max,
+      start_date,
+      target_completion_date
+    } = await request.json()
+
+    if (!name?.trim()) {
+      return NextResponse.json(
+        { error: "Project name is required" },
+        { status: 400 }
+      )
+    }
+
+    // If template_id is provided, fetch the template to initialize rooms
+    let initialRooms = []
+    if (template_id) {
+      const { data: template, error: templateError } = await supabase
+        .from("project_templates")
+        .select("default_rooms")
+        .eq("id", template_id)
+        .single()
+
+      if (!templateError && template?.default_rooms && Array.isArray(template.default_rooms)) {
+        initialRooms = template.default_rooms as any[]
+      }
+    }
+
+    const projectData = {
+      name: name.trim(),
+      user_id: userId,
+      description: description || null,
+      template_id: template_id || null,
+      location: location || null,
+      budget_min: budget_min || null,
+      budget_max: budget_max || null,
+      start_date: start_date || null,
+      target_completion_date: target_completion_date || null,
+      rooms: initialRooms,
+      status: 'planning'
+    }
 
     const { data, error } = await supabase
       .from("projects")
-      .insert({ name, user_id: userId })
+      .insert(projectData)
       .select()
       .single()
 

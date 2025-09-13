@@ -31,91 +31,133 @@ export const APP_DOMAIN = "https://zola.chat"
 
 export const SUGGESTIONS = [
   {
-    label: "Summary",
-    highlight: "Summarize",
-    prompt: `Summarize`,
+    label: "Kitchen Remodel",
+    highlight: "Plan my kitchen",
+    prompt: `I want to remodel my kitchen`,
     items: [
-      "Summarize the French Revolution",
-      "Summarize the plot of Inception",
-      "Summarize World War II in 5 sentences",
-      "Summarize the benefits of meditation",
+      "I want to remodel my kitchen - help me get started",
+      "What's the typical cost for a kitchen renovation?",
+      "How long does a kitchen remodel usually take?",
+      "What should I consider when choosing kitchen cabinets?",
     ],
-    icon: Notepad,
+    icon: Code, // Using existing icon
   },
   {
-    label: "Code",
-    highlight: "Help me",
-    prompt: `Help me`,
+    label: "Bathroom Renovation",
+    highlight: "Update my bathroom",
+    prompt: `I'm planning a bathroom renovation`,
     items: [
-      "Help me write a function to reverse a string in JavaScript",
-      "Help me create a responsive navbar in HTML/CSS",
-      "Help me write a SQL query to find duplicate emails",
-      "Help me convert this Python function to JavaScript",
-    ],
-    icon: Code,
-  },
-  {
-    label: "Design",
-    highlight: "Design",
-    prompt: `Design`,
-    items: [
-      "Design a color palette for a tech blog",
-      "Design a UX checklist for mobile apps",
-      "Design 5 great font pairings for a landing page",
-      "Design better CTAs with useful tips",
+      "I'm planning a bathroom renovation - where do I start?",
+      "What's involved in a master bathroom remodel?",
+      "How do I choose the right tiles for my bathroom?",
+      "What's the difference between a half bath and full bath renovation?",
     ],
     icon: PaintBrush,
   },
   {
-    label: "Research",
-    highlight: "Research",
-    prompt: `Research`,
+    label: "Living Spaces",
+    highlight: "Transform my living",
+    prompt: `I want to update my living room`,
     items: [
-      "Research the pros and cons of remote work",
-      "Research the differences between Apple Vision Pro and Meta Quest",
-      "Research best practices for password security",
-      "Research the latest trends in renewable energy",
-    ],
-    icon: BookOpenText,
-  },
-  {
-    label: "Get inspired",
-    highlight: "Inspire me",
-    prompt: `Inspire me`,
-    items: [
-      "Inspire me with a beautiful quote about creativity",
-      "Inspire me with a writing prompt about solitude",
-      "Inspire me with a poetic way to start a newsletter",
-      "Inspire me by describing a peaceful morning in nature",
+      "I want to update my living room - need design ideas",
+      "How can I create an open concept living space?",
+      "What flooring works best for high-traffic areas?",
+      "How do I choose paint colors for my living room?",
     ],
     icon: Sparkle,
   },
   {
-    label: "Think deeply",
-    highlight: "Reflect on",
-    prompt: `Reflect on`,
+    label: "Budget Planning",
+    highlight: "Plan my budget",
+    prompt: `Help me plan my renovation budget`,
     items: [
-      "Reflect on why we fear uncertainty",
-      "Reflect on what makes a conversation meaningful",
-      "Reflect on the concept of time in a simple way",
-      "Reflect on what it means to live intentionally",
+      "Help me plan my renovation budget",
+      "What percentage of my home's value should I spend on renovations?",
+      "How do I prioritize which rooms to renovate first?",
+      "What are the hidden costs in home renovations?",
     ],
     icon: Brain,
   },
   {
-    label: "Learn gently",
-    highlight: "Explain",
-    prompt: `Explain`,
+    label: "Project Management",
+    highlight: "Manage my project",
+    prompt: `Help me manage my renovation project`,
     items: [
-      "Explain quantum physics like I'm 10",
-      "Explain stoicism in simple terms",
-      "Explain how a neural network works",
-      "Explain the difference between AI and AGI",
+      "Help me create a timeline for my home renovation",
+      "How do I find and vet reliable contractors?",
+      "What permits do I need for my renovation?",
+      "How do I coordinate multiple renovation phases?",
+    ],
+    icon: Notepad,
+  },
+  {
+    label: "Design Inspiration",
+    highlight: "Get design ideas",
+    prompt: `I need design inspiration`,
+    items: [
+      "I need design inspiration for my home renovation",
+      "What are the latest trends in home design?",
+      "How do I choose a design style that suits my lifestyle?",
+      "Show me before and after renovation examples",
+    ],
+    icon: BookOpenText,
+  },
+  {
+    label: "Expert Advice",
+    highlight: "Get expert advice",
+    prompt: `I need expert renovation advice`,
+    items: [
+      "What mistakes should I avoid in my renovation?",
+      "How do I maximize space in a small room?",
+      "What's the ROI on different home improvements?",
+      "How do I balance functionality with style?",
     ],
     icon: Lightbulb,
   },
 ]
 
-export const SYSTEM_PROMPT_DEFAULT = `You are Houzz, a thoughtful and clear assistant. Your tone is calm, minimal, and human. You write with intention—never too much, never too little. You avoid clichés, speak simply, and offer helpful, grounded answers. When needed, you ask good questions. You don't try to impress—you aim to clarify. You may use metaphors if they bring clarity, but you stay sharp and sincere. You're here to help the user think clearly and move forward, not to overwhelm or overperform.`
+export const SYSTEM_PROMPT_DEFAULT = `You are Houzz, an expert home remodeling consultant and project manager. You help homeowners plan, organize, and execute their renovation projects from initial concept to completion.
+
+Your expertise includes:
+- Kitchen, bathroom, living room, bedroom, and whole-house renovations
+- Budget planning and cost estimation
+- Timeline development and project scheduling
+- Material selection and design choices
+- Contractor coordination and project management
+- Building codes and permit requirements
+- Space planning and design optimization
+
+Your approach:
+- Ask ONE focused question at a time to avoid overwhelming the homeowner
+- Wait for their response before asking follow-up questions
+- Break down complex projects into manageable phases
+- Provide realistic budget estimates when asked
+- Suggest design options when homeowners are uncertain
+- Always consider safety, functionality, and aesthetic appeal
+- Track project information systematically using your available tools
+
+When a user mentions projects or renovations:
+1. First, use listProjects to see what projects already exist - this helps avoid duplicates and reference existing work
+2. If they mention starting a NEW project, create one using createProject tool
+3. If they want to discuss an EXISTING project, use getProjectDetails to see current status
+4. Begin gathering project details by asking ONE specific question at a time
+5. Update project information as you learn more using updateProject with proper room details
+
+IMPORTANT: Ask only one question per response. Let the conversation flow naturally by focusing on what the homeowner just told you, then asking the most relevant follow-up question. Avoid listing multiple questions or overwhelming them with too much at once.
+
+When to use listProjects:
+- At the start of conversations to understand existing projects
+- When user mentions "my project", "kitchen remodel", etc. without being specific
+- Before creating new projects to check for potential duplicates
+- When user asks about their projects or wants to switch between projects
+
+When updating project information:
+- Use simple, clear values instead of complex objects when possible
+- For room details, provide specific values like "quartz", "modern", "gas" rather than nested JSON
+- Always include a conversationUpdate to summarize key decisions made
+
+Remember: Every renovation is unique. Listen carefully, ask focused follow-up questions, and provide personalized recommendations based on the specific project requirements, budget, and homeowner preferences.
+
+You maintain a professional yet approachable tone, explaining complex concepts clearly while being encouraging about the exciting transformation ahead.`
 
 export const MESSAGE_MAX_LENGTH = 10000

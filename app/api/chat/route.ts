@@ -2,7 +2,7 @@ import { SYSTEM_PROMPT_DEFAULT } from "@/lib/config"
 import { getAllModels } from "@/lib/models"
 import { getProviderForModel } from "@/lib/openproviders/provider-map"
 import { Attachment } from "@ai-sdk/ui-utils"
-import { Message as MessageAISDK, streamText, ToolSet } from "ai"
+import { Message as MessageAISDK, streamText } from "ai"
 import {
   incrementMessageCount,
   logUserMessage,
@@ -10,6 +10,7 @@ import {
   validateAndTrackUsage,
 } from "./api"
 import { createErrorResponse, extractErrorMessage } from "./utils"
+import { getAllTools } from "./tools"
 
 export const maxDuration = 60
 
@@ -86,15 +87,34 @@ export async function POST(req: Request) {
       apiKey = (await getEffectiveApiKey(userId, provider)) || undefined
     }
 
+    // Get tools with userId context
+    const tools = getAllTools(userId)
+
     const result = streamText({
       model: modelConfig.apiSdk(apiKey, { enableSearch }),
       system: effectiveSystemPrompt,
       messages: messages,
-      tools: {} as ToolSet,
+      tools: tools,
+      toolChoice: "auto",
       maxSteps: 10,
       onError: (err: unknown) => {
         console.error("Streaming error occurred:", err)
         // Don't set streamError anymore - let the AI SDK handle it through the stream
+      },
+
+      onStepFinish: (step) => {
+        if (step.toolCalls && step.toolCalls.length > 0) {
+          console.log('🔧 Tool calls executed:', step.toolCalls.map(call => ({
+            toolName: call.toolName,
+            args: call.args
+          })))
+        }
+        if (step.toolResults && step.toolResults.length > 0) {
+          console.log('🔧 Tool results:', step.toolResults.map(result => ({
+            toolCallId: result.toolCallId,
+            result: result.result
+          })))
+        }
       },
 
       onFinish: async ({ response }) => {

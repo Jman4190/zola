@@ -55,11 +55,56 @@ export async function PUT(
 ) {
   try {
     const { projectId } = await params
-    const { name } = await request.json()
+    const body = await request.json()
+    
+    const {
+      name,
+      description,
+      template_id,
+      status,
+      budget_min,
+      budget_max,
+      start_date,
+      target_completion_date,
+      location,
+      rooms
+    } = body
 
-    if (!name?.trim()) {
+    // Basic validation
+    if (name !== undefined && !name?.trim()) {
       return NextResponse.json(
-        { error: "Project name is required" },
+        { error: "Project name cannot be empty" },
+        { status: 400 }
+      )
+    }
+
+    // Validate status if provided
+    const validStatuses = ['planning', 'in_progress', 'completed', 'on_hold']
+    if (status !== undefined && !validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: "Invalid project status" },
+        { status: 400 }
+      )
+    }
+
+    // Validate budget values
+    if (budget_min !== undefined && budget_min < 0) {
+      return NextResponse.json(
+        { error: "Minimum budget cannot be negative" },
+        { status: 400 }
+      )
+    }
+    
+    if (budget_max !== undefined && budget_max < 0) {
+      return NextResponse.json(
+        { error: "Maximum budget cannot be negative" },
+        { status: 400 }
+      )
+    }
+
+    if (budget_min !== undefined && budget_max !== undefined && budget_min > budget_max) {
+      return NextResponse.json(
+        { error: "Minimum budget cannot exceed maximum budget" },
         { status: 400 }
       )
     }
@@ -79,9 +124,25 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Build the update object only with provided fields
+    const updateData: Record<string, any> = {
+      updated_at: new Date().toISOString()
+    }
+
+    if (name !== undefined) updateData.name = name.trim()
+    if (description !== undefined) updateData.description = description
+    if (template_id !== undefined) updateData.template_id = template_id
+    if (status !== undefined) updateData.status = status
+    if (budget_min !== undefined) updateData.budget_min = budget_min
+    if (budget_max !== undefined) updateData.budget_max = budget_max
+    if (start_date !== undefined) updateData.start_date = start_date
+    if (target_completion_date !== undefined) updateData.target_completion_date = target_completion_date
+    if (location !== undefined) updateData.location = location
+    if (rooms !== undefined) updateData.rooms = rooms
+
     const { data, error } = await supabase
       .from("projects")
-      .update({ name: name.trim() })
+      .update(updateData)
       .eq("id", projectId)
       .eq("user_id", authData.user.id)
       .select()
