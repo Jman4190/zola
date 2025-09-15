@@ -79,8 +79,8 @@ export default function ProjectsPage() {
     })
 
     // Room details
-    if (project.rooms && Array.isArray(project.rooms)) {
-      project.rooms.forEach(room => {
+    if (project.project_details && Array.isArray(project.project_details)) {
+      project.project_details.forEach(room => {
         if (room.details) {
           Object.values(room.details).forEach(value => {
             totalFields++
@@ -261,10 +261,10 @@ export default function ProjectsPage() {
                       <span>Target: {formatDate(project.target_completion_date)}</span>
                     </div>
                   )}
-                  {project.rooms && project.rooms.length > 0 && (
+                  {project.project_details && project.project_details.length > 0 && (
                     <div className="flex items-center gap-2">
                       <Home className="h-4 w-4" />
-                      <span>{project.rooms.length} room{project.rooms.length !== 1 ? 's' : ''}</span>
+                      <span>{project.project_details.length} area{project.project_details.length !== 1 ? 's' : ''}</span>
                     </div>
                   )}
                 </div>

@@ -15,7 +15,7 @@ export interface BaseProject {
   target_completion_date?: string
   location?: string
   conversation_updates?: string[]
-  rooms: RoomData[]
+  project_details: RoomData[]
   created_at: string
   updated_at: string
 }
@@ -203,7 +203,7 @@ export function validateProjectData(data: Partial<BaseProject>): { valid: boolea
 }
 
 export function getProjectCompletionPercentage(project: BaseProject): number {
-  if (!project.rooms || project.rooms.length === 0) {
+  if (!project.project_details || project.project_details.length === 0) {
     return 0
   }
 
@@ -212,7 +212,7 @@ export function getProjectCompletionPercentage(project: BaseProject): number {
 
   // Count basic project info (excluding start_date as it's not required)
   const basicFields = [
-    'name', 'description', 'location', 'budget_min', 'budget_max'
+    'name', 'description', 'location'
   ]
   
   basicFields.forEach(field => {
@@ -223,7 +223,7 @@ export function getProjectCompletionPercentage(project: BaseProject): number {
   })
 
   // Count room details
-  project.rooms.forEach(room => {
+  project.project_details.forEach(room => {
     const roomDetails = room.details
     if (!roomDetails) return
 

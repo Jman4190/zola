@@ -84,7 +84,7 @@ export async function PUT(
     // First, get the current project to merge with existing data
     const { data: currentProject, error: fetchError } = await supabase
       .from("projects")
-      .select("rooms")
+      .select("project_details")
       .eq("id", projectId)
       .eq("user_id", authData.user.id)
       .single()
@@ -93,8 +93,8 @@ export async function PUT(
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
-    // Merge room details with existing rooms data
-    let updatedRooms: any[] = Array.isArray(currentProject.rooms) ? currentProject.rooms : []
+    // Merge room details with existing project_details data
+    let updatedRooms: any[] = Array.isArray(currentProject.project_details) ? currentProject.project_details : []
     
     if (roomDetails) {
       // For each room in roomDetails, update or add to the existing rooms
@@ -125,7 +125,7 @@ export async function PUT(
 
     // Build update object
     const updateData: Record<string, any> = {
-      rooms: updatedRooms,
+      project_details: updatedRooms,
       updated_at: new Date().toISOString()
     }
 
@@ -196,10 +196,10 @@ export async function PATCH(
       return NextResponse.json({ error: "Project not found" }, { status: 404 })
     }
 
-    // Deep merge logic for rooms data
-    let updatedRooms: any[] = Array.isArray(currentProject.rooms) ? currentProject.rooms : []
-    if (updates.rooms) {
-      updates.rooms.forEach((updateRoom: any) => {
+    // Deep merge logic for project_details data
+    let updatedRooms: any[] = Array.isArray(currentProject.project_details) ? currentProject.project_details : []
+    if (updates.project_details) {
+      updates.project_details.forEach((updateRoom: any) => {
         const existingIndex = updatedRooms.findIndex(
           (room: any) => room.name === updateRoom.name
         )
@@ -217,7 +217,7 @@ export async function PATCH(
           updatedRooms.push(updateRoom)
         }
       })
-      updates.rooms = updatedRooms
+      updates.project_details = updatedRooms
     }
 
     // Add timestamp

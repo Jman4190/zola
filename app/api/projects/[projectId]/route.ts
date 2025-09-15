@@ -67,7 +67,7 @@ export async function PUT(
       start_date,
       target_completion_date,
       location,
-      rooms
+      project_details
     } = body
 
     // Basic validation
@@ -138,7 +138,7 @@ export async function PUT(
     if (start_date !== undefined) updateData.start_date = start_date
     if (target_completion_date !== undefined) updateData.target_completion_date = target_completion_date
     if (location !== undefined) updateData.location = location
-    if (rooms !== undefined) updateData.rooms = rooms
+    if (project_details !== undefined) updateData.project_details = project_details
 
     const { data, error } = await supabase
       .from("projects")

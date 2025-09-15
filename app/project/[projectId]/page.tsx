@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   ArrowLeft, 
   Home, 
@@ -26,7 +27,8 @@ import {
   X,
   CheckCircle,
   AlertCircle,
-  Clock
+  Clock,
+  FileText
 } from "lucide-react"
 import type { BaseProject, RoomData } from "@/lib/project-schemas"
 
@@ -47,6 +49,8 @@ export default function ProjectDashboard() {
   const [isEditing, setIsEditing] = useState(false)
   const [editData, setEditData] = useState<Partial<BaseProject>>({})
   const [isSaving, setIsSaving] = useState(false)
+  const [isEditingProjectDetails, setIsEditingProjectDetails] = useState(false)
+  const [activeTab, setActiveTab] = useState<string>('0')
 
   useEffect(() => {
     if (!user) {
@@ -68,6 +72,10 @@ export default function ProjectDashboard() {
         }
         setProject(projectWithCompletion)
         setEditData(data)
+        // Set active tab to first room
+        if (data.project_details && data.project_details.length > 0) {
+          setActiveTab('0')
+        }
       } else if (response.status === 404) {
         router.push('/projects')
       }
@@ -92,8 +100,8 @@ export default function ProjectDashboard() {
     })
 
     // Room details
-    if (project.rooms && Array.isArray(project.rooms)) {
-      project.rooms.forEach(room => {
+    if (project.project_details && Array.isArray(project.project_details)) {
+      project.project_details.forEach(room => {
         if (room.details) {
           Object.values(room.details).forEach(value => {
             totalFields++
@@ -179,21 +187,31 @@ export default function ProjectDashboard() {
     }).format(new Date(date))
   }
 
-  const formatRoomDetailValue = (value: any): string => {
-    if (!value || value === 'unknown') return 'Not specified'
+  const formatDetailValue = (value: any): string => {
+    if (value === null || value === undefined) return 'Not set'
+    if (value === '') return 'Not set'
+    if (value === 'unknown') return 'Unknown'
     
-    if (typeof value === 'object') {
+    if (typeof value === 'object' && value !== null) {
       // Handle nested objects by formatting them nicely
-      const entries = Object.entries(value).filter(([_, v]) => v && v !== 'unknown' && v !== '')
-      if (entries.length === 0) return 'Not specified'
+      const entries = Object.entries(value)
+      if (entries.length === 0) return 'Not set'
       
       return entries.map(([key, val]) => {
         const formattedKey = key.replace(/_/g, ' ').toLowerCase()
-        // Handle boolean values
-        if (typeof val === 'boolean') {
-          return formattedKey + (val ? ': yes' : ': no')
+        let formattedValue = ''
+        
+        if (val === null || val === undefined || val === '') {
+          formattedValue = 'not set'
+        } else if (val === 'unknown') {
+          formattedValue = 'unknown'
+        } else if (typeof val === 'boolean') {
+          formattedValue = val ? 'yes' : 'no'
+        } else {
+          formattedValue = String(val)
         }
-        return `${formattedKey}: ${val}`
+        
+        return `${formattedKey}: ${formattedValue}`
       }).join(', ')
     }
     
@@ -203,6 +221,22 @@ export default function ProjectDashboard() {
     }
     
     return String(value)
+  }
+
+  const formatFieldName = (key: string): string => {
+    return key.replace(/_/g, ' ').split(' ').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ')
+  }
+
+  const getAllFields = (details: any) => {
+    if (!details) return []
+    
+    return Object.entries(details).map(([key, value]) => ({
+      key,
+      label: formatFieldName(key),
+      value: formatDetailValue(value)
+    }))
   }
 
   const getCategoryIcon = (category?: string) => {
@@ -217,25 +251,6 @@ export default function ProjectDashboard() {
     }
   }
 
-  const getRoomCompletionStatus = (room: RoomData) => {
-    if (!room.details) return { completed: 0, total: 0, percentage: 0 }
-    
-    let completed = 0
-    let total = 0
-    
-    Object.values(room.details).forEach(value => {
-      total++
-      if (value && value !== 'unknown' && value !== '') {
-        completed++
-      }
-    })
-    
-    return {
-      completed,
-      total,
-      percentage: total > 0 ? Math.round((completed / total) * 100) : 0
-    }
-  }
 
   const startChatForProject = () => {
     // For now, just go to main chat. Later we'll enhance this to create project-specific chats
@@ -285,13 +300,13 @@ export default function ProjectDashboard() {
         </p>
       </div>
 
-      {/* Project Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Project Overview */}
+      <div>
         {/* Basic Information */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Project Details</CardTitle>
+              <CardTitle>Project Overview</CardTitle>
               {isEditing ? (
                 <div className="flex gap-2">
                   <Button onClick={handleSave} disabled={isSaving} size="sm">
@@ -352,60 +367,58 @@ export default function ProjectDashboard() {
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="budget_min">Min Budget</Label>
-                    <Input
-                      id="budget_min"
-                      type="number"
-                      value={editData.budget_min || ''}
-                      onChange={(e) => setEditData(prev => ({ 
-                        ...prev, 
-                        budget_min: e.target.value ? Number(e.target.value) : null 
-                      }))}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="budget_max">Max Budget</Label>
-                    <Input
-                      id="budget_max"
-                      type="number"
-                      value={editData.budget_max || ''}
-                      onChange={(e) => setEditData(prev => ({ 
-                        ...prev, 
-                        budget_max: e.target.value ? Number(e.target.value) : null 
-                      }))}
-                      placeholder="0"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="budget_min">Min Budget</Label>
+                  <Input
+                    id="budget_min"
+                    type="number"
+                    value={editData.budget_min || ''}
+                    onChange={(e) => setEditData(prev => ({ 
+                      ...prev, 
+                      budget_min: e.target.value ? Number(e.target.value) : null 
+                    }))}
+                    placeholder="0"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="budget_max">Max Budget</Label>
+                  <Input
+                    id="budget_max"
+                    type="number"
+                    value={editData.budget_max || ''}
+                    onChange={(e) => setEditData(prev => ({ 
+                      ...prev, 
+                      budget_max: e.target.value ? Number(e.target.value) : null 
+                    }))}
+                    placeholder="0"
+                  />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="start_date">Start Date</Label>
-                    <Input
-                      id="start_date"
-                      type="date"
-                      value={formatDate(editData.start_date)}
-                      onChange={(e) => setEditData(prev => ({ 
-                        ...prev, 
-                        start_date: e.target.value || null 
-                      }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="target_completion_date">Target Completion</Label>
-                    <Input
-                      id="target_completion_date"
-                      type="date"
-                      value={formatDate(editData.target_completion_date)}
-                      onChange={(e) => setEditData(prev => ({ 
-                        ...prev, 
-                        target_completion_date: e.target.value || null 
-                      }))}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="start_date">Start Date</Label>
+                  <Input
+                    id="start_date"
+                    type="date"
+                    value={formatDate(editData.start_date)}
+                    onChange={(e) => setEditData(prev => ({ 
+                      ...prev, 
+                      start_date: e.target.value || null 
+                    }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="target_completion_date">Target Completion</Label>
+                  <Input
+                    id="target_completion_date"
+                    type="date"
+                    value={formatDate(editData.target_completion_date)}
+                    onChange={(e) => setEditData(prev => ({ 
+                      ...prev, 
+                      target_completion_date: e.target.value || null 
+                    }))}
+                  />
                 </div>
               </>
             ) : (
@@ -436,53 +449,24 @@ export default function ProjectDashboard() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  {project.start_date && (
-                    <div>
-                      <Label className="text-sm font-medium">Start Date</Label>
-                      <p className="text-muted-foreground mt-1">{formatDisplayDate(project.start_date)}</p>
-                    </div>
-                  )}
-                  {project.target_completion_date && (
-                    <div>
-                      <Label className="text-sm font-medium">Target Completion</Label>
-                      <p className="text-muted-foreground mt-1">{formatDisplayDate(project.target_completion_date)}</p>
-                    </div>
-                  )}
-                </div>
+                {project.start_date && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Start Date: {formatDisplayDate(project.start_date)}</span>
+                  </div>
+                )}
+                
+                {project.target_completion_date && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Target Completion: {formatDisplayDate(project.target_completion_date)}</span>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Room Progress */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Room Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {project.rooms && project.rooms.length > 0 ? (
-              <div className="space-y-4">
-                {project.rooms.map((room, index) => {
-                  const roomStatus = getRoomCompletionStatus(room)
-                  return (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{room.name}</span>
-                        <span className="text-muted-foreground">
-                          {roomStatus.completed}/{roomStatus.total} completed
-                        </span>
-                      </div>
-                      <Progress value={roomStatus.percentage} className="h-2" />
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">No rooms defined yet. Chat with the assistant to add room details.</p>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {/* Project Description from Conversations */}
@@ -507,42 +491,139 @@ export default function ProjectDashboard() {
         </Card>
       )}
 
-      {/* Room Details */}
-      {project.rooms && project.rooms.length > 0 && (
+      {/* Project Details */}
+      {project.project_details && project.project_details.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Room Details</CardTitle>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Project Details
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Information collected from your project setup
+                </p>
+              </div>
+              <Button 
+                onClick={() => setIsEditingProjectDetails(!isEditingProjectDetails)} 
+                variant="outline" 
+                size="sm"
+              >
+                <Edit3 className="h-4 w-4 mr-2" />
+                {isEditingProjectDetails ? 'View' : 'Edit'}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {project.rooms.map((room, index) => (
-                <div key={index}>
-                  {index > 0 && <Separator className="my-6" />}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">{room.name}</h3>
-                    {room.details && Object.keys(room.details).length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.entries(room.details).map(([key, value]) => {
-                          const formattedValue = formatRoomDetailValue(value)
-                          if (formattedValue === 'Not specified') return null
-                          
-                          return (
-                            <div key={key} className="space-y-1">
-                              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                                {key.replace(/_/g, ' ')}
-                              </Label>
-                              <p className="text-sm">{formattedValue}</p>
-                            </div>
-                          )
-                        })}
+            {project.project_details.length === 1 ? (
+              // Single room - no tabs needed
+              <div className="space-y-4">
+                {(() => {
+                  const area = project.project_details[0]
+                  const allFields = getAllFields(area.details)
+                  
+                  return (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="font-medium">
+                          {area.name}
+                        </Badge>
                       </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No details specified yet.</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                      
+                      {allFields.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {allFields.map(field => {
+                            const isUnknown = field.value === 'Unknown' || field.value.includes('unknown')
+                            const isNotSet = field.value === 'Not set' || field.value.includes('not set')
+                            
+                            return (
+                              <div key={field.key}>
+                                <Label className="text-sm font-medium text-muted-foreground">
+                                  {field.label}
+                                </Label>
+                                <p className={`text-sm font-medium mt-1 ${
+                                  isNotSet ? 'text-muted-foreground italic' : 
+                                  isUnknown ? 'text-amber-600' : 
+                                  'text-foreground'
+                                }`}>
+                                  {field.value}
+                                </p>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No details specified yet. Chat with the assistant to add information.
+                        </p>
+                      )}
+                    </div>
+                  )
+                })()}
+              </div>
+            ) : (
+              // Multiple rooms - use tabs
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                <TabsList className="grid w-full bg-muted p-1 rounded-lg" style={{ gridTemplateColumns: `repeat(${project.project_details.length}, 1fr)` }}>
+                  {project.project_details.map((area, index) => (
+                    <TabsTrigger 
+                      key={index} 
+                      value={index.toString()}
+                      className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200 font-medium"
+                    >
+                      {area.name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                
+                {project.project_details.map((area, index) => {
+                  const allFields = getAllFields(area.details)
+                  
+                  return (
+                    <TabsContent key={index} value={index.toString()} className="space-y-4 mt-6">
+                      <div className="border-l-4 border-primary pl-4 mb-4">
+                        <h3 className="text-lg font-semibold text-foreground">{area.name}</h3>
+                        <p className="text-sm text-muted-foreground">Room details and specifications</p>
+                      </div>
+                      
+                      {allFields.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {allFields.map(field => {
+                            const isUnknown = field.value === 'Unknown' || field.value.includes('unknown')
+                            const isNotSet = field.value === 'Not set' || field.value.includes('not set')
+                            
+                            return (
+                              <div key={field.key} className="space-y-1">
+                                <Label className="text-sm font-medium text-muted-foreground">
+                                  {field.label}
+                                </Label>
+                                <p className={`text-sm font-medium ${
+                                  isNotSet ? 'text-muted-foreground italic' : 
+                                  isUnknown ? 'text-amber-600' : 
+                                  'text-foreground'
+                                }`}>
+                                  {field.value}
+                                </p>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 border-2 border-dashed border-muted rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-2">
+                            No details specified yet for {area.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Chat with the assistant to add information about this room.
+                          </p>
+                        </div>
+                      )}
+                    </TabsContent>
+                  )
+                })}
+              </Tabs>
+            )}
           </CardContent>
         </Card>
       )}
@@ -568,7 +649,7 @@ export default function ProjectDashboard() {
               <div className="grid grid-cols-3 gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Home className="h-3 w-3" />
-                  <span>{project.rooms?.length || 0} rooms</span>
+                  <span>{project.project_details?.length || 0} project areas</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <DollarSign className="h-3 w-3" />

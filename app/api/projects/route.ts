@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       budget_max: budget_max || null,
       start_date: start_date || null,
       target_completion_date: target_completion_date || null,
-      rooms: initialRooms,
+      project_details: initialRooms,
       status: 'planning'
     }
 

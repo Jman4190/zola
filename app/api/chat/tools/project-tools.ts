@@ -10,14 +10,10 @@ export const createProjectTool = (userId: string) => tool({
     name: z.string().describe("The name of the project (e.g., 'Kitchen Remodel', 'Master Bathroom Renovation')"),
     projectType: z.string().describe("The type of project: 'kitchen', 'bathroom', 'living_room', 'bedroom', 'whole_house', or 'outdoor'"),
     description: z.string().optional().describe("Optional description of the project"),
-    location: z.string().optional().describe("Location/address of the project"),
-    budgetMin: z.number().optional().describe("Minimum budget for the project"),
-    budgetMax: z.number().optional().describe("Maximum budget for the project"),
-    startDate: z.string().optional().describe("Planned start date (YYYY-MM-DD format)"),
-    targetCompletionDate: z.string().optional().describe("Target completion date (YYYY-MM-DD format)")
+    location: z.string().optional().describe("Location/address of the project")
   }),
-  execute: async ({ name, projectType, description, location, budgetMin, budgetMax, startDate, targetCompletionDate }) => {
-    console.log('🏠 Creating project:', { userId, name, projectType, description, location, budgetMin, budgetMax, startDate, targetCompletionDate })
+  execute: async ({ name, projectType, description, location }) => {
+    console.log('🏠 Creating project:', { userId, name, projectType, description, location })
     
     try {
       const supabase = await createClient()
@@ -32,11 +28,7 @@ export const createProjectTool = (userId: string) => tool({
       // Validate data
       const validation = validateProjectData({
         name,
-        description,
-        budget_min: budgetMin,
-        budget_max: budgetMax,
-        start_date: startDate,
-        target_completion_date: targetCompletionDate
+        description
       })
 
       if (!validation.valid) {
@@ -70,11 +62,7 @@ export const createProjectTool = (userId: string) => tool({
         description: description || null,
         template_id: template?.id || null,
         location: location || null,
-        budget_min: budgetMin || null,
-        budget_max: budgetMax || null,
-        start_date: startDate || null,
-        target_completion_date: targetCompletionDate || null,
-        rooms: initialRooms,
+        project_details: initialRooms,
         status: 'planning' as const
       }
 
@@ -100,10 +88,10 @@ export const createProjectTool = (userId: string) => tool({
           name: project.name,
           type: projectType,
           status: project.status,
-          rooms: initialRooms.map(r => r.name),
+          project_details: initialRooms.map(a => a.name),
           template: template?.name
         },
-        message: `Successfully created "${name}" project! I've set up the initial room structure based on a ${template?.name || 'general'} template. Let's start gathering information about your project.`
+        message: `Successfully created "${name}" project! I've set up the initial project structure based on a ${template?.name || 'general'} template. Let's start gathering information about your project details.`
       }
 
     } catch (error) {
@@ -124,15 +112,11 @@ export const updateProjectTool = (userId: string) => tool({
       name: z.string().optional(),
       description: z.string().optional(),
       location: z.string().optional(),
-      budgetMin: z.number().optional(),
-      budgetMax: z.number().optional(),
-      startDate: z.string().optional(),
-      targetCompletionDate: z.string().optional(),
       status: z.enum(['planning', 'in_progress', 'completed', 'on_hold']).optional(),
-      roomUpdates: z.array(z.object({
-        roomName: z.string(),
-        details: z.record(z.any()).describe("Room-specific details to update")
-      })).optional().describe("Updates to specific room details"),
+      projectUpdates: z.array(z.object({
+        areaName: z.string(),
+        details: z.record(z.any()).describe("Area-specific details to update")
+      })).optional().describe("Updates to specific project area details"),
       conversationUpdate: z.string().optional().describe("A bulleted update to record from this conversation")
     })
   }),
@@ -173,47 +157,43 @@ export const updateProjectTool = (userId: string) => tool({
       if (updates.name) updateData.name = updates.name
       if (updates.description) updateData.description = updates.description
       if (updates.location) updateData.location = updates.location
-      if (updates.budgetMin) updateData.budget_min = updates.budgetMin
-      if (updates.budgetMax) updateData.budget_max = updates.budgetMax
-      if (updates.startDate) updateData.start_date = updates.startDate
-      if (updates.targetCompletionDate) updateData.target_completion_date = updates.targetCompletionDate
       if (updates.status) updateData.status = updates.status
 
-      // Handle room updates
-      if (updates.roomUpdates && updates.roomUpdates.length > 0) {
-        console.log('🏠 Processing room updates:', updates.roomUpdates)
-        const currentRooms: any[] = Array.isArray(existingProject.rooms) ? [...existingProject.rooms] : []
-        console.log('🏠 Current rooms before update:', currentRooms)
+      // Handle project area updates
+      if (updates.projectUpdates && updates.projectUpdates.length > 0) {
+        console.log('🏠 Processing project area updates:', updates.projectUpdates)
+        const currentAreas: any[] = Array.isArray(existingProject.project_details) ? [...existingProject.project_details] : []
+        console.log('🏠 Current areas before update:', currentAreas)
         
-        updates.roomUpdates.forEach(({ roomName, details }) => {
-          console.log(`🏠 Updating room "${roomName}" with details:`, details)
-          const roomIndex = currentRooms.findIndex((room: any) => room.name === roomName)
+        updates.projectUpdates.forEach(({ areaName, details }) => {
+          console.log(`🏠 Updating area "${areaName}" with details:`, details)
+          const areaIndex = currentAreas.findIndex((area: any) => area.name === areaName)
           
-          if (roomIndex >= 0) {
-            // Update existing room
-            console.log(`🏠 Found existing room "${roomName}" at index ${roomIndex}`)
-            const oldDetails = currentRooms[roomIndex].details
+          if (areaIndex >= 0) {
+            // Update existing area
+            console.log(`🏠 Found existing area "${areaName}" at index ${areaIndex}`)
+            const oldDetails = currentAreas[areaIndex].details
             const newDetails = {
               ...oldDetails,
               ...details
             }
-            console.log(`🏠 Room "${roomName}" details update:`, { oldDetails, newDetails })
-            currentRooms[roomIndex] = {
-              ...currentRooms[roomIndex],
+            console.log(`🏠 Area "${areaName}" details update:`, { oldDetails, newDetails })
+            currentAreas[areaIndex] = {
+              ...currentAreas[areaIndex],
               details: newDetails
             }
           } else {
-            // Add new room
-            console.log(`🏠 Adding new room "${roomName}"`)
-            currentRooms.push({
-              name: roomName,
+            // Add new area
+            console.log(`🏠 Adding new area "${areaName}"`)
+            currentAreas.push({
+              name: areaName,
               details: details
             })
           }
         })
         
-        console.log('🏠 Final rooms after update:', currentRooms)
-        updateData.rooms = currentRooms
+        console.log('🏠 Final areas after update:', currentAreas)
+        updateData.project_details = currentAreas
       }
 
       // Handle conversation updates
@@ -300,7 +280,7 @@ export const listProjectsTool = (userId: string) => tool({
           budget_min,
           budget_max,
           target_completion_date,
-          rooms,
+          project_details,
           created_at,
           updated_at,
           template_id
@@ -337,7 +317,7 @@ export const listProjectsTool = (userId: string) => tool({
         let totalFields = 0
         let completedFields = 0
         
-        const basicFields = ['name', 'description', 'location', 'budget_min', 'budget_max']
+        const basicFields = ['name', 'description', 'location']
         basicFields.forEach(field => {
           totalFields++
           if (project[field as keyof typeof project] && project[field as keyof typeof project] !== 'unknown') {
@@ -345,11 +325,11 @@ export const listProjectsTool = (userId: string) => tool({
           }
         })
         
-        // Count room details
-        const rooms = Array.isArray(project.rooms) ? project.rooms : []
-        rooms.forEach((room: any) => {
-          if (room.details) {
-            Object.values(room.details).forEach(value => {
+        // Count project detail areas
+        const areas = Array.isArray(project.project_details) ? project.project_details : []
+        areas.forEach((area: any) => {
+          if (area.details) {
+            Object.values(area.details).forEach(value => {
               totalFields++
               if (value && value !== 'unknown' && value !== '') {
                 completedFields++
@@ -450,8 +430,8 @@ export const getProjectDetailsTool = (userId: string) => tool({
       let completionScore = 0
       let totalFields = 0
 
-      // Check basic project fields (excluding start_date as it's not required)
-      const basicFields = ['name', 'description', 'location', 'budget_min', 'budget_max'] as const
+      // Check basic project fields
+      const basicFields = ['name', 'description', 'location'] as const
       basicFields.forEach(field => {
         totalFields++
         if (project[field] && project[field] !== 'unknown') {
@@ -459,30 +439,30 @@ export const getProjectDetailsTool = (userId: string) => tool({
         }
       })
 
-      // Check room details
-      const rooms = Array.isArray(project.rooms) ? project.rooms : []
-      const roomInfo: any[] = []
+      // Check project area details
+      const areas = Array.isArray(project.project_details) ? project.project_details : []
+      const areaInfo: any[] = []
       
-      rooms.forEach((room: any) => {
-        const roomDetails = room.details || {}
-        let roomCompleted = 0
-        let roomTotal = 0
+      areas.forEach((area: any) => {
+        const areaDetails = area.details || {}
+        let areaCompleted = 0
+        let areaTotal = 0
         const missingInfo: string[] = []
 
-        Object.entries(roomDetails).forEach(([key, value]) => {
-          roomTotal++
+        Object.entries(areaDetails).forEach(([key, value]) => {
+          areaTotal++
           totalFields++
           if (value && value !== 'unknown' && value !== '') {
-            roomCompleted++
+            areaCompleted++
             completionScore++
           } else {
             missingInfo.push(key)
           }
         })
 
-        roomInfo.push({
-          name: room.name,
-          completion: roomTotal > 0 ? Math.round((roomCompleted / roomTotal) * 100) : 0,
+        areaInfo.push({
+          name: area.name,
+          completion: areaTotal > 0 ? Math.round((areaCompleted / areaTotal) * 100) : 0,
           missingInfo: missingInfo.slice(0, 5) // Limit to first 5 missing items
         })
       })
@@ -509,7 +489,7 @@ export const getProjectDetailsTool = (userId: string) => tool({
           template: template?.name,
           category: template?.category,
           completion: overallCompletion,
-          rooms: roomInfo,
+          areas: areaInfo,
           createdAt: project.created_at,
           lastUpdated: project.updated_at
         },
