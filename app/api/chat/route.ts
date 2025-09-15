@@ -78,7 +78,7 @@ export async function POST(req: Request) {
       throw new Error(`Model ${model} not found`)
     }
 
-    const effectiveSystemPrompt = systemPrompt || SYSTEM_PROMPT_DEFAULT
+    let effectiveSystemPrompt = systemPrompt || SYSTEM_PROMPT_DEFAULT
 
     let apiKey: string | undefined
     if (isAuthenticated && userId) {
@@ -87,16 +87,44 @@ export async function POST(req: Request) {
       apiKey = (await getEffectiveApiKey(userId, provider)) || undefined
     }
 
-    // Get tools with userId context
+    // If it's the user's first turn and we can check projects, bias the model toward creation mode when none exist
+    const isFirstUserTurn = messages.filter((m) => m.role === "user").length === 1
+    let hasAnyProject: boolean | null = null
+    if (supabase && isFirstUserTurn) {
+      try {
+        const { data: anyProject } = await supabase
+          .from("projects")
+          .select("id")
+          .eq("user_id", userId)
+          .limit(1)
+        hasAnyProject = !!(anyProject && anyProject.length > 0)
+        console.log("🧭 First turn project check:", { userId, chatId, model, hasAnyProject })
+        if (!hasAnyProject) {
+          effectiveSystemPrompt += `\n\n[Context] The user has zero projects in the database. Enter Project Creation Mode immediately. Do not call listProjects again in this message.`
+        } else {
+          effectiveSystemPrompt += `\n\n[Context] The user already has at least one project. You may ask which project they want to work on or proceed to get details. Avoid calling listProjects more than once.`
+        }
+      } catch (_) {
+        // Non-fatal; proceed without injection
+      }
+    }
+
+    // Get tools with userId context and optionally disable redundant listProjects on first turn with zero projects
     const tools = getAllTools(userId)
+    const toolsForThisTurn = { ...tools } as Record<string, any>
+    if (isFirstUserTurn && hasAnyProject === false) {
+      delete (toolsForThisTurn as any).listProjects
+      console.log("🛑 Disabled listProjects tool for this turn (zero projects)")
+    }
+    console.log("🧰 Tools enabled this turn:", Object.keys(toolsForThisTurn))
 
     const result = streamText({
       model: modelConfig.apiSdk(apiKey, { enableSearch }),
       system: effectiveSystemPrompt,
       messages: messages,
-      tools: tools,
+      tools: toolsForThisTurn,
       toolChoice: "auto",
-      maxSteps: 10,
+      maxSteps: isFirstUserTurn ? 3 : 10,
       onError: (err: unknown) => {
         console.error("Streaming error occurred:", err)
         // Don't set streamError anymore - let the AI SDK handle it through the stream

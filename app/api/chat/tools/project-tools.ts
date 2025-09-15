@@ -3,16 +3,60 @@ import { getRoomDetailsTemplate, validateProjectData } from "@/lib/project-schem
 import { tool } from "ai"
 import { z } from "zod"
 
+type ProjectCategory =
+  | "kitchen"
+  | "bathroom"
+  | "living_room"
+  | "bedroom"
+  | "whole_house"
+  | "outdoor"
+
+function generateDefaultName(category: ProjectCategory) {
+  const pretty: Record<ProjectCategory, string> = {
+    kitchen: "Kitchen Remodel",
+    bathroom: "Bathroom Renovation",
+    living_room: "Living Room Refresh",
+    bedroom: "Bedroom Update",
+    whole_house: "Whole House Remodel",
+    outdoor: "Outdoor Project",
+  }
+  return pretty[category]
+}
+
+async function uniquifyName(supabase: any, userId: string, baseName: string) {
+  const { data: existing } = await supabase
+    .from("projects")
+    .select("name")
+    .eq("user_id", userId)
+  const names = new Set((existing || []).map((p: any) => (p.name || "").toLowerCase()))
+  if (!names.has(baseName.toLowerCase())) return baseName
+  let counter = 2
+  while (true) {
+    const candidate = `${baseName} (${counter})`
+    if (!names.has(candidate.toLowerCase())) return candidate
+    counter++
+  }
+}
+
 // Create Project Tool - we'll inject userId via closure
 export const createProjectTool = (userId: string) => tool({
-  description: "Creates a new home remodeling project for the user. Use this when a user mentions starting a new renovation, remodel, or home improvement project.",
+  description: "Creates a new home remodeling project for the user. Use this whenever a new renovation is identified.",
   parameters: z.object({
-    name: z.string().describe("The name of the project (e.g., 'Kitchen Remodel', 'Master Bathroom Renovation')"),
-    projectType: z.string().describe("The type of project: 'kitchen', 'bathroom', 'living_room', 'bedroom', 'whole_house', or 'outdoor'"),
-    description: z.string().optional().describe("Optional description of the project"),
-    location: z.string().optional().describe("Location/address of the project")
+    name: z.string().min(1).optional(),
+    projectType: z
+      .enum(["kitchen", "bathroom", "living_room", "bedroom", "whole_house", "outdoor"]) as z.ZodEnum<[
+        "kitchen",
+        "bathroom",
+        "living_room",
+        "bedroom",
+        "whole_house",
+        "outdoor"
+      ]>,
+    description: z.string().optional(),
+    location: z.string().optional(),
+    dedupeByName: z.boolean().default(true).optional(),
   }),
-  execute: async ({ name, projectType, description, location }) => {
+  execute: async ({ name, projectType, description, location, dedupeByName }) => {
     console.log('🏠 Creating project:', { userId, name, projectType, description, location })
     
     try {
@@ -25,18 +69,11 @@ export const createProjectTool = (userId: string) => tool({
         }
       }
 
-      // Validate data
-      const validation = validateProjectData({
-        name,
-        description
-      })
-
-      if (!validation.valid) {
-        return {
-          success: false,
-          error: `Validation failed: ${validation.errors.join(', ')}`
-        }
-      }
+      // Determine final name (generate default if missing) and validate
+      const baseName = (name || generateDefaultName(projectType as ProjectCategory)).trim()
+      const finalName = dedupeByName
+        ? await uniquifyName(supabase, userId, baseName)
+        : baseName
 
       // Find the appropriate template
       const { data: templates } = await supabase
@@ -57,7 +94,7 @@ export const createProjectTool = (userId: string) => tool({
 
       // Create the project
       const projectData = {
-        name,
+        name: finalName,
         user_id: userId,
         description: description || null,
         template_id: template?.id || null,
@@ -91,7 +128,7 @@ export const createProjectTool = (userId: string) => tool({
           project_details: initialRooms.map(a => a.name),
           template: template?.name
         },
-        message: `Successfully created "${name}" project! I've set up the initial project structure based on a ${template?.name || 'general'} template. Let's start gathering information about your project details.`
+        message: `Created "${project.name}". Next, ask one focused question to start capturing details.`
       }
 
     } catch (error) {
@@ -256,6 +293,12 @@ export const listProjectsTool = (userId: string) => tool({
   description: "Lists all existing projects for the user. Use this to see what projects are already created and avoid duplicates, or to reference existing projects in conversation.",
   parameters: z.object({}),
   execute: async () => {
+    // Guard: avoid repeated listProjects within the same model step by setting a transient flag in process memory
+    // Note: this is per-server-process best-effort; the main prevention is done in route by disabling the tool when already known empty
+    if ((globalThis as any).__listProjectsInFlight) {
+      return { success: true, hasProjects: (globalThis as any).__lastHasProjects ?? false, projects: (globalThis as any).__lastProjects ?? [], message: "Already checked projects in this step.", recommendedNextQuestion: (globalThis as any).__lastRecommendedQuestion ?? null }
+    }
+    ;(globalThis as any).__listProjectsInFlight = true
     console.log('📋 Listing projects for user:', userId)
     
     try {
@@ -351,7 +394,7 @@ export const listProjectsTool = (userId: string) => tool({
             max: project.budget_max
           },
           targetDate: project.target_completion_date,
-          rooms: rooms.map((r: any) => r.name),
+          rooms: (Array.isArray(project.project_details) ? project.project_details : []).map((r: any) => r.name),
           completion,
           template: template?.name,
           category: template?.category,
@@ -362,12 +405,18 @@ export const listProjectsTool = (userId: string) => tool({
 
       console.log(`✅ Retrieved ${projectList.length} projects for user`)
       
+      const hasProjects = projectList.length > 0
+      ;(globalThis as any).__lastHasProjects = hasProjects
+      ;(globalThis as any).__lastProjects = projectList
+      ;(globalThis as any).__lastRecommendedQuestion = hasProjects ? null : "Which area are you renovating? kitchen, bathroom, living_room, bedroom, whole_house, or outdoor?"
       return {
         success: true,
+        hasProjects,
         projects: projectList,
-        message: projectList.length > 0 
+        message: hasProjects 
           ? `Found ${projectList.length} existing project${projectList.length === 1 ? '' : 's'}: ${projectList.map(p => `"${p.name}" (${p.status}, ${p.completion}% complete)`).join(', ')}`
-          : "No existing projects found. You can create a new project when the user mentions starting a renovation."
+          : "0 projects found. Immediately switch to Project Creation Mode: ask the user which area they're renovating (choose from kitchen, bathroom, living_room, bedroom, whole_house, or outdoor), then ask what to name it, then call createProject.",
+        recommendedNextQuestion: hasProjects ? null : "Which area are you renovating? kitchen, bathroom, living_room, bedroom, whole_house, or outdoor?"
       }
 
     } catch (error) {
@@ -376,6 +425,9 @@ export const listProjectsTool = (userId: string) => tool({
         success: false,
         error: `Failed to list projects: ${error instanceof Error ? error.message : 'Unknown error'}`
       }
+    }
+    finally {
+      ;(globalThis as any).__listProjectsInFlight = false
     }
   }
 })
