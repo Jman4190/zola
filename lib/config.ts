@@ -1,11 +1,7 @@
 import {
-  BookOpenText,
   Brain,
-  Code,
   Lightbulb,
   Notepad,
-  PaintBrush,
-  Sparkle,
 } from "@phosphor-icons/react/dist/ssr"
 
 export const NON_AUTH_DAILY_MESSAGE_LIMIT = 5
@@ -31,40 +27,16 @@ export const APP_DOMAIN = "https://zola.chat"
 
 export const SUGGESTIONS = [
   {
-    label: "Kitchen Remodel",
-    highlight: "Plan my kitchen",
-    prompt: `I want to remodel my kitchen`,
+    label: "Create Project",
+    highlight: "Create",
+    prompt: `Let's create a new home remodeling project`,
     items: [
-      "I want to remodel my kitchen - help me get started",
-      "What's the typical cost for a kitchen renovation?",
-      "How long does a kitchen remodel usually take?",
-      "What should I consider when choosing kitchen cabinets?",
+      'Create a kitchen project named "Modern Kitchen" in Austin, TX',
+      'Create a bathroom project named "Spa Bathroom" in San Jose, CA',
+      'Create a whole_house project named "Full Remodel"',
+      'Create an outdoor project named "Backyard Oasis" in 94107',
     ],
-    icon: Code, // Using existing icon
-  },
-  {
-    label: "Bathroom Renovation",
-    highlight: "Update my bathroom",
-    prompt: `I'm planning a bathroom renovation`,
-    items: [
-      "I'm planning a bathroom renovation - where do I start?",
-      "What's involved in a master bathroom remodel?",
-      "How do I choose the right tiles for my bathroom?",
-      "What's the difference between a half bath and full bath renovation?",
-    ],
-    icon: PaintBrush,
-  },
-  {
-    label: "Living Spaces",
-    highlight: "Transform my living",
-    prompt: `I want to update my living room`,
-    items: [
-      "I want to update my living room - need design ideas",
-      "How can I create an open concept living space?",
-      "What flooring works best for high-traffic areas?",
-      "How do I choose paint colors for my living room?",
-    ],
-    icon: Sparkle,
+    icon: Notepad,
   },
   {
     label: "Budget Planning",
@@ -89,18 +61,6 @@ export const SUGGESTIONS = [
       "How do I coordinate multiple renovation phases?",
     ],
     icon: Notepad,
-  },
-  {
-    label: "Design Inspiration",
-    highlight: "Get design ideas",
-    prompt: `I need design inspiration`,
-    items: [
-      "I need design inspiration for my home renovation",
-      "What are the latest trends in home design?",
-      "How do I choose a design style that suits my lifestyle?",
-      "Show me before and after renovation examples",
-    ],
-    icon: BookOpenText,
   },
   {
     label: "Expert Advice",
