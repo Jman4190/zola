@@ -7,6 +7,7 @@ import { UserMenu } from "@/app/components/layout/user-menu"
 import { useBreakpoint } from "@/app/hooks/use-breakpoint"
 import { HouzzIcon } from "@/components/icons/houzz"
 import { Button } from "@/components/ui/button"
+import { useSidebar } from "@/components/ui/sidebar"
 import { APP_NAME } from "@/lib/config"
 import { useUserPreferences } from "@/lib/user-preference-store/provider"
 import { useUser } from "@/lib/user-store/provider"
@@ -20,6 +21,7 @@ export function Header({ hasSidebar }: { hasSidebar: boolean }) {
   const { user } = useUser()
   const { preferences } = useUserPreferences()
   const isMultiModelEnabled = preferences.multiModelEnabled
+  const { open: sidebarOpen } = hasSidebar ? useSidebar() : { open: false }
 
   const isLoggedIn = !!user
 
@@ -34,13 +36,15 @@ export function Header({ hasSidebar }: { hasSidebar: boolean }) {
         <div className="flex flex-1 items-center justify-between">
           <div className="-ml-0.5 flex flex-1 items-center gap-2 lg:-ml-2.5">
             <div className="flex flex-1 items-center gap-2">
-              <Link
-                href="/"
-                className="pointer-events-auto inline-flex items-center"
-                aria-label="Houzz Home"
-              >
-                <HouzzIcon className="h-8 w-auto" />
-              </Link>
+              {hasSidebar && sidebarOpen && (
+                <Link
+                  href="/"
+                  className="pointer-events-auto inline-flex items-center"
+                  aria-label="Houzz Home"
+                >
+                  <HouzzIcon className="h-8 w-auto" />
+                </Link>
+              )}
               {hasSidebar && isMobile && <HeaderSidebarTrigger />}
             </div>
           </div>
