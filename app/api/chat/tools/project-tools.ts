@@ -320,8 +320,7 @@ export const listProjectsTool = (userId: string) => tool({
           description,
           status,
           location,
-          budget_min,
-          budget_max,
+          budget,
           target_completion_date,
           project_details,
           created_at,
@@ -389,10 +388,7 @@ export const listProjectsTool = (userId: string) => tool({
           description: project.description,
           status: project.status,
           location: project.location,
-          budget: {
-            min: project.budget_min,
-            max: project.budget_max
-          },
+          budget: project.budget,
           targetDate: project.target_completion_date,
           rooms: (Array.isArray(project.project_details) ? project.project_details : []).map((r: any) => r.name),
           completion,
@@ -530,12 +526,8 @@ export const getProjectDetailsTool = (userId: string) => tool({
           description: project.description,
           status: project.status,
           location: project.location,
-          budget: {
-            min: project.budget_min,
-            max: project.budget_max
-          },
+          budget: project.budget,
           timeline: {
-            start: project.start_date,
             completion: project.target_completion_date
           },
           template: template?.name,

@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { fetchClient } from "@/lib/fetch"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -25,6 +27,12 @@ type CreateProjectData = {
   name: string
   user_id: string
   created_at: string
+  description: string | null
+}
+
+type CreateProjectPayload = {
+  name: string
+  description: string | null
 }
 
 export function DialogCreateProject({
@@ -32,16 +40,20 @@ export function DialogCreateProject({
   setIsOpen,
 }: DialogCreateProjectProps) {
   const [projectName, setProjectName] = useState("")
+  const [projectDescription, setProjectDescription] = useState("")
   const queryClient = useQueryClient()
   const router = useRouter()
   const createProjectMutation = useMutation({
-    mutationFn: async (name: string): Promise<CreateProjectData> => {
+    mutationFn: async ({
+      name,
+      description,
+    }: CreateProjectPayload): Promise<CreateProjectData> => {
       const response = await fetchClient("/api/projects", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, description }),
       })
 
       if (!response.ok) {
@@ -54,6 +66,7 @@ export function DialogCreateProject({
       queryClient.invalidateQueries({ queryKey: ["projects"] })
       router.push(`/p/${data.id}`)
       setProjectName("")
+      setProjectDescription("")
       setIsOpen(false)
     },
   })
@@ -61,7 +74,10 @@ export function DialogCreateProject({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (projectName.trim()) {
-      createProjectMutation.mutate(projectName.trim())
+      createProjectMutation.mutate({
+        name: projectName.trim(),
+        description: projectDescription.trim() || null,
+      })
     }
   }
 
@@ -72,16 +88,29 @@ export function DialogCreateProject({
           <DialogHeader>
             <DialogTitle>Create New Project</DialogTitle>
             <DialogDescription>
-              Enter a name for your new project.
+              Enter details for your new project.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Input
-              placeholder="Project name"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              autoFocus
-            />
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="project-name">Project name</Label>
+              <Input
+                id="project-name"
+                placeholder="Project name"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="project-description">Project description</Label>
+              <Textarea
+                id="project-description"
+                placeholder="Project description"
+                value={projectDescription}
+                onChange={(e) => setProjectDescription(e.target.value)}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button

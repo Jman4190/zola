@@ -91,7 +91,7 @@ export default function ProjectDashboard() {
     let completedFields = 0
 
     // Basic project fields (excluding start_date as it's not required)
-    const basicFields = ['description', 'location', 'budget_min', 'budget_max']
+    const basicFields = ['description', 'location', 'budget']
     basicFields.forEach(field => {
       totalFields++
       if (project[field as keyof BaseProject] && project[field as keyof BaseProject] !== 'unknown') {
@@ -368,55 +368,30 @@ export default function ProjectDashboard() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="budget_min">Min Budget</Label>
+                  <Label htmlFor="budget">Budget</Label>
                   <Input
-                    id="budget_min"
+                    id="budget"
                     type="number"
-                    value={editData.budget_min || ''}
+                    value={editData.budget ?? ''}
                     onChange={(e) => setEditData(prev => ({ 
                       ...prev, 
-                      budget_min: e.target.value ? Number(e.target.value) : null 
-                    }))}
-                    placeholder="0"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="budget_max">Max Budget</Label>
-                  <Input
-                    id="budget_max"
-                    type="number"
-                    value={editData.budget_max || ''}
-                    onChange={(e) => setEditData(prev => ({ 
-                      ...prev, 
-                      budget_max: e.target.value ? Number(e.target.value) : null 
+                      budget: e.target.value ? Number(e.target.value) : null 
                     }))}
                     placeholder="0"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="start_date">Start Date</Label>
-                  <Input
-                    id="start_date"
-                    type="date"
-                    value={formatDate(editData.start_date)}
-                    onChange={(e) => setEditData(prev => ({ 
-                      ...prev, 
-                      start_date: e.target.value || null 
-                    }))}
-                  />
-                </div>
+                {/* start_date removed */}
                 
                 <div className="space-y-2">
                   <Label htmlFor="target_completion_date">Target Completion</Label>
                   <Input
                     id="target_completion_date"
                     type="date"
-                    value={formatDate(editData.target_completion_date)}
+                    value={formatDate(editData.target_completion_date ?? null)}
                     onChange={(e) => setEditData(prev => ({ 
                       ...prev, 
-                      target_completion_date: e.target.value || null 
+                      target_completion_date: (e.target.value ?? null) as string | null 
                     }))}
                   />
                 </div>
@@ -437,24 +412,16 @@ export default function ProjectDashboard() {
                   </div>
                 )}
 
-                {(project.budget_min || project.budget_max) && (
+                {project.budget && (
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">
-                      Budget: {project.budget_min && project.budget_max 
-                        ? `${formatCurrency(project.budget_min)} - ${formatCurrency(project.budget_max)}`
-                        : formatCurrency(project.budget_min || project.budget_max || 0)
-                      }
+                      Budget: {formatCurrency(project.budget)}
                     </span>
                   </div>
                 )}
 
-                {project.start_date && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Start Date: {formatDisplayDate(project.start_date)}</span>
-                  </div>
-                )}
+                {/* start_date removed */}
                 
                 {project.target_completion_date && (
                   <div className="flex items-center gap-2">
@@ -653,7 +620,7 @@ export default function ProjectDashboard() {
                 </div>
                 <div className="flex items-center gap-1">
                   <DollarSign className="h-3 w-3" />
-                  <span>Budget: {project.budget_max ? formatCurrency(project.budget_max) : 'TBD'}</span>
+                  <span>Budget: {project.budget ? formatCurrency(project.budget) : 'TBD'}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />

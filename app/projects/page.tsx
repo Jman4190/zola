@@ -70,7 +70,7 @@ export default function ProjectsPage() {
     let completedFields = 0
 
     // Basic project fields (excluding start_date as it's not required)
-    const basicFields = ['description', 'location', 'budget_min', 'budget_max']
+    const basicFields = ['description', 'location', 'budget']
     basicFields.forEach(field => {
       totalFields++
       if (project[field as keyof BaseProject] && project[field as keyof BaseProject] !== 'unknown') {
@@ -244,15 +244,10 @@ export default function ProjectsPage() {
                       <span>{project.location}</span>
                     </div>
                   )}
-                  {(project.budget_min || project.budget_max) && (
+                  {project.budget && (
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4" />
-                      <span>
-                        {project.budget_min && project.budget_max 
-                          ? `${formatCurrency(project.budget_min)} - ${formatCurrency(project.budget_max)}`
-                          : formatCurrency(project.budget_min || project.budget_max || 0)
-                        }
-                      </span>
+                      <span>{formatCurrency(project.budget)}</span>
                     </div>
                   )}
                   {project.target_completion_date && (

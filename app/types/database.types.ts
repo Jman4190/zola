@@ -19,9 +19,9 @@ export type Database = {
           description: string | null
           template_id: string | null
           status: string
-          budget_min: number | null
-          budget_max: number | null
-          start_date: string | null
+          budget: number | null
+          // start_date removed
+          start_date: never
           target_completion_date: string | null
           location: string | null
           project_details: Json | null
@@ -35,9 +35,9 @@ export type Database = {
           description?: string | null
           template_id?: string | null
           status?: string
-          budget_min?: number | null
-          budget_max?: number | null
-          start_date?: string | null
+          budget?: number | null
+          // start_date removed
+          start_date?: never
           target_completion_date?: string | null
           location?: string | null
           project_details?: Json | null
@@ -51,9 +51,9 @@ export type Database = {
           description?: string | null
           template_id?: string | null
           status?: string
-          budget_min?: number | null
-          budget_max?: number | null
-          start_date?: string | null
+          budget?: number | null
+          // start_date removed
+          start_date?: never
           target_completion_date?: string | null
           location?: string | null
           project_details?: Json | null

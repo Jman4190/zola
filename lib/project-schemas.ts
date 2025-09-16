@@ -9,11 +9,9 @@ export interface BaseProject {
   description?: string
   template_id?: string
   status: ProjectStatus
-  budget_min?: number
-  budget_max?: number
-  start_date?: string
-  target_completion_date?: string
-  location?: string
+  budget?: number | null
+  target_completion_date?: string | null
+  location?: string | null
   conversation_updates?: string[]
   project_details: RoomData[]
   created_at: string
@@ -184,16 +182,8 @@ export function validateProjectData(data: Partial<BaseProject>): { valid: boolea
     errors.push('Invalid project status')
   }
 
-  if (data.budget_min !== undefined && data.budget_min < 0) {
-    errors.push('Minimum budget cannot be negative')
-  }
-
-  if (data.budget_max !== undefined && data.budget_max < 0) {
-    errors.push('Maximum budget cannot be negative')
-  }
-
-  if (data.budget_min !== undefined && data.budget_max !== undefined && data.budget_min > data.budget_max) {
-    errors.push('Minimum budget cannot exceed maximum budget')
+  if (data.budget !== undefined && data.budget < 0) {
+    errors.push('Budget cannot be negative')
   }
 
   return {

@@ -62,9 +62,7 @@ export async function PUT(
       description,
       template_id,
       status,
-      budget_min,
-      budget_max,
-      start_date,
+      budget,
       target_completion_date,
       location,
       project_details
@@ -87,24 +85,10 @@ export async function PUT(
       )
     }
 
-    // Validate budget values
-    if (budget_min !== undefined && budget_min < 0) {
+    // Validate budget value
+    if (budget !== undefined && budget < 0) {
       return NextResponse.json(
-        { error: "Minimum budget cannot be negative" },
-        { status: 400 }
-      )
-    }
-    
-    if (budget_max !== undefined && budget_max < 0) {
-      return NextResponse.json(
-        { error: "Maximum budget cannot be negative" },
-        { status: 400 }
-      )
-    }
-
-    if (budget_min !== undefined && budget_max !== undefined && budget_min > budget_max) {
-      return NextResponse.json(
-        { error: "Minimum budget cannot exceed maximum budget" },
+        { error: "Budget cannot be negative" },
         { status: 400 }
       )
     }
@@ -133,9 +117,7 @@ export async function PUT(
     if (description !== undefined) updateData.description = description
     if (template_id !== undefined) updateData.template_id = template_id
     if (status !== undefined) updateData.status = status
-    if (budget_min !== undefined) updateData.budget_min = budget_min
-    if (budget_max !== undefined) updateData.budget_max = budget_max
-    if (start_date !== undefined) updateData.start_date = start_date
+    if (budget !== undefined) updateData.budget = budget
     if (target_completion_date !== undefined) updateData.target_completion_date = target_completion_date
     if (location !== undefined) updateData.location = location
     if (project_details !== undefined) updateData.project_details = project_details

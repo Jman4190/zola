@@ -27,9 +27,7 @@ export async function POST(request: Request) {
       description,
       template_id,
       location,
-      budget_min,
-      budget_max,
-      start_date,
+      budget,
       target_completion_date
     } = await request.json()
 
@@ -60,9 +58,7 @@ export async function POST(request: Request) {
       description: description || null,
       template_id: template_id || null,
       location: location || null,
-      budget_min: budget_min || null,
-      budget_max: budget_max || null,
-      start_date: start_date || null,
+      budget: budget || null,
       target_completion_date: target_completion_date || null,
       project_details: initialRooms,
       status: 'planning'
