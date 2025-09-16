@@ -9,7 +9,7 @@
   --font-mono: var(--font-geist-mono);
   --spacing-app-header: 56px;
   --spacing-input-area: 134px;
-  --global-nav-width: 64px;
+  --global-nav-width: 80px;
 
   @keyframes loading-dots {
     0%,

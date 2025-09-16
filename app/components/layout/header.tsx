@@ -29,7 +29,7 @@ export function Header({ hasSidebar }: { hasSidebar: boolean }) {
     <header
       className="h-app-header pointer-events-none fixed top-0 right-0 z-50"
       style={{
-        left: hasSidebar ? "64px" : "0"
+        left: "80px"
       }}
     >
       <div className="relative mx-auto flex h-full max-w-full items-center justify-between bg-transparent px-4 sm:px-6 lg:bg-transparent lg:px-8">

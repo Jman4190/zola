@@ -42,10 +42,12 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
         <TooltipTrigger asChild>
           <DropdownMenuTrigger className={compact ? "w-12" : "w-full"}>
             {compact ? (
-              <div className="hover:bg-muted flex size-12 items-center justify-center rounded-lg">
-                <Avatar className="bg-background hover:bg-muted size-8">
+              <div className="flex size-12 items-center justify-center">
+                <Avatar className="size-8">
                   <AvatarImage src={user?.profile_image ?? undefined} />
-                  <AvatarFallback>{user?.display_name?.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="bg-white/20 text-white text-xs font-medium">
+                    {user?.display_name?.charAt(0)}
+                  </AvatarFallback>
                 </Avatar>
               </div>
             ) : (

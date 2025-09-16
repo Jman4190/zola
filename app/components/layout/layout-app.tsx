@@ -13,10 +13,10 @@ export function LayoutApp({ children }: { children: React.ReactNode }) {
     <div
       className="bg-background flex h-dvh w-full overflow-hidden"
       style={hasSidebar ? {
-        "--sidebar-left-offset": "64px"
+        "--sidebar-left-offset": "80px"
       } as React.CSSProperties : {}}
     >
-      {hasSidebar && <GlobalNav />}
+      <GlobalNav />
       {hasSidebar && <AppSidebar />}
       <main className="@container relative h-dvh w-0 flex-shrink flex-grow overflow-y-auto">
         <Header hasSidebar={hasSidebar} />
