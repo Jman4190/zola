@@ -254,7 +254,7 @@ export default function ProjectDashboard() {
 
   const startChatForProject = () => {
     // For now, just go to main chat. Later we'll enhance this to create project-specific chats
-    router.push(`/chat?project=${projectId}`)
+    router.push(`/p/${projectId}`)
   }
 
   if (isLoading) {
