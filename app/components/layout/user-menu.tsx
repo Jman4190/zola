@@ -21,7 +21,7 @@ import { AppInfoTrigger } from "./app-info/app-info-trigger"
 import { FeedbackTrigger } from "./feedback/feedback-trigger"
 import { SettingsTrigger } from "./settings/settings-trigger"
 
-export function UserMenu() {
+export function UserMenu({ compact = false }: { compact?: boolean }) {
   const { user } = useUser()
   const [isMenuOpen, setMenuOpen] = useState(false)
   const [isSettingsOpen, setSettingsOpen] = useState(false)
@@ -40,21 +40,30 @@ export function UserMenu() {
     <DropdownMenu open={isMenuOpen} onOpenChange={setMenuOpen} modal={false}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <DropdownMenuTrigger className="w-full">
-            <div className="hover:bg-muted flex w-full items-center gap-2 rounded-md p-2">
-              <Avatar className="bg-background hover:bg-muted">
-                <AvatarImage src={user?.profile_image ?? undefined} />
-                <AvatarFallback>{user?.display_name?.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col text-left">
-                <div className="text-sidebar-foreground text-sm font-medium">
-                  {user?.display_name || user?.email || 'Profile'}
-                </div>
-                <div className="text-sidebar-foreground/70 text-xs">
-                  Manage your account
+          <DropdownMenuTrigger className={compact ? "w-12" : "w-full"}>
+            {compact ? (
+              <div className="hover:bg-muted flex size-12 items-center justify-center rounded-lg">
+                <Avatar className="bg-background hover:bg-muted size-8">
+                  <AvatarImage src={user?.profile_image ?? undefined} />
+                  <AvatarFallback>{user?.display_name?.charAt(0)}</AvatarFallback>
+                </Avatar>
+              </div>
+            ) : (
+              <div className="hover:bg-muted flex w-full items-center gap-2 rounded-md p-2">
+                <Avatar className="bg-background hover:bg-muted">
+                  <AvatarImage src={user?.profile_image ?? undefined} />
+                  <AvatarFallback>{user?.display_name?.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col text-left">
+                  <div className="text-sidebar-foreground text-sm font-medium">
+                    {user?.display_name || user?.email || 'Profile'}
+                  </div>
+                  <div className="text-sidebar-foreground/70 text-xs">
+                    Manage your account
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </DropdownMenuTrigger>
         </TooltipTrigger>
         <TooltipContent>Profile</TooltipContent>

@@ -218,12 +218,12 @@ function Sidebar({
       <div
         data-slot="sidebar-gap"
         className={cn(
-          "relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
-          "group-data-[collapsible=offcanvas]:w-0",
+          "relative w-[calc(var(--sidebar-width)+var(--sidebar-left-offset,0px))] bg-transparent transition-[width] duration-200 ease-linear",
+          "group-data-[collapsible=offcanvas]:w-[var(--sidebar-left-offset,0px)]",
           "group-data-[side=right]:rotate-180",
           variant === "floating" || variant === "inset"
-            ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
-            : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
+            ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+var(--sidebar-left-offset,0px))]"
+            : "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+var(--sidebar-left-offset,0px))]"
         )}
       />
       <div
@@ -231,7 +231,7 @@ function Sidebar({
         className={cn(
           "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
           side === "left"
-            ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
+            ? "left-[var(--sidebar-left-offset,0px)] group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-left-offset,0px)-var(--sidebar-width))]"
             : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
           // Adjust the padding for floating and inset variants.
           variant === "floating" || variant === "inset"

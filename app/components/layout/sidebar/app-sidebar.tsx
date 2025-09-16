@@ -24,7 +24,6 @@ import { useParams, useRouter } from "next/navigation"
 import { useMemo } from "react"
 import { useUser } from "@/lib/user-store/provider"
 import { HistoryTrigger } from "../../history/history-trigger"
-import { UserMenu } from "../user-menu"
 import { SidebarList } from "./sidebar-list"
 import { SidebarProject } from "./sidebar-project"
 
@@ -144,9 +143,6 @@ export function AppSidebar() {
           )}
         </ScrollArea>
       </SidebarContent>
-      <SidebarFooter className="border-border/40 mb-2 border-t p-3">
-        <UserMenu />
-      </SidebarFooter>
     </Sidebar>
   )
 }
