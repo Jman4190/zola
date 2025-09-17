@@ -14,13 +14,13 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { 
-  ArrowLeft, 
-  Home, 
-  Calendar, 
-  DollarSign, 
-  MapPin, 
-  MessageSquare, 
+import {
+  ArrowLeft,
+  Home,
+  Calendar,
+  DollarSign,
+  MapPin,
+  MessageSquare,
   Edit3,
   Save,
   X,
@@ -28,7 +28,10 @@ import {
   AlertCircle,
   Clock,
   FileText,
-  Flag
+  Flag,
+  HelpCircle,
+  Sparkles,
+  ArrowRight
 } from "lucide-react"
 import type { BaseProject } from "@/lib/project-schemas"
 import { cn } from "@/lib/utils"
@@ -704,6 +707,43 @@ export default function ProjectDashboard() {
     })
 
     return orderedSections
+  }
+
+  const handleFieldAction = () => {
+    setIsEditingProjectDetails(true)
+  }
+
+  const renderFieldValue = (field: StructuredField) => {
+    if (field.status === 'value') {
+      return (
+        <div className="flex w-full items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-primary-700 shadow-sm">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold">{field.value}</span>
+        </div>
+      )
+    }
+
+    const displayLabel = field.status === 'unknown' ? 'Unknown' : 'Not specified'
+
+    return (
+      <button
+        type="button"
+        onClick={handleFieldAction}
+        className={cn(
+          'shimmer group relative flex w-full items-center justify-between gap-2 overflow-hidden rounded-md border border-dashed border-muted-foreground/40 bg-muted/40 px-3 py-2 text-left text-sm font-medium text-muted-foreground/80 transition',
+          'hover:border-primary/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50'
+        )}
+      >
+        <div className="relative z-10 flex items-center gap-2">
+          <HelpCircle className="h-4 w-4 opacity-70 transition group-hover:opacity-100" />
+          <span>{displayLabel}</span>
+        </div>
+        <span className="relative z-10 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground/70 transition group-hover:text-primary">
+          Add detail
+          <ArrowRight className="h-3 w-3" />
+        </span>
+      </button>
+    )
   }
 
   const getCategoryIcon = (category?: string) => {

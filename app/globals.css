@@ -161,3 +161,37 @@ code {
 [data-sonner-toaster] > li {
   width: 100%;
 }
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  pointer-events: none;
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    110deg,
+    transparent 5%,
+    rgba(255, 255, 255, 0.6) 40%,
+    rgba(255, 255, 255, 0.75) 50%,
+    rgba(255, 255, 255, 0.6) 60%,
+    transparent 95%
+  );
+  opacity: 0;
+  animation: shimmer-sweep 2.4s ease-in-out infinite;
+}
+
+.shimmer:hover::after,
+.shimmer:focus-visible::after {
+  opacity: 1;
+}
+
+@keyframes shimmer-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
