@@ -28,7 +28,8 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  FileText
+  FileText,
+  Flag
 } from "lucide-react"
 import type { BaseProject, RoomData } from "@/lib/project-schemas"
 
@@ -173,6 +174,14 @@ export default function ProjectDashboard() {
     }).format(amount)
   }
 
+  const formatStatusLabel = (status: string | null | undefined) => {
+    if (!status) return null
+    return status
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
   const formatDate = (date: string | null) => {
     if (!date) return ''
     return new Date(date).toISOString().split('T')[0]
@@ -281,16 +290,22 @@ export default function ProjectDashboard() {
     )
   }
 
+  const formattedStatus = formatStatusLabel(project.status ?? null)
+  const headerStatus = formatStatusLabel(project.status ?? 'planning') ?? 'Planning'
+  const formattedBudget = project.budget ? formatCurrency(project.budget) : null
+  const formattedTargetDate = formatDisplayDate(project.target_completion_date)
+
   return (
     <MessagesProvider>
       <LayoutApp>
-        <div className="container mx-auto py-8 space-y-8">
+        <div className="px-4 py-8 sm:px-6 lg:px-10">
+          <div className="flex w-full max-w-4xl flex-col space-y-8">
       {/* Header */}
       <div>
         <div className="flex items-center gap-3">
           <span className="text-2xl">{getCategoryIcon(project.category)}</span>
           <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
-          <Badge className={getStatusColor(project.status)}>{project.status.replace('_', ' ')}</Badge>
+          <Badge className={getStatusColor(project.status ?? 'planning')}>{headerStatus}</Badge>
         </div>
         <p className="text-muted-foreground mt-1">
           Created {formatDisplayDate(project.created_at)}
@@ -367,7 +382,7 @@ export default function ProjectDashboard() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 w-full sm:max-w-xs">
                   <Label htmlFor="budget">Budget</Label>
                   <Input
                     id="budget"
@@ -378,12 +393,13 @@ export default function ProjectDashboard() {
                       budget: e.target.value ? Number(e.target.value) : null 
                     }))}
                     placeholder="0"
+                    className="w-full"
                   />
                 </div>
 
                 {/* start_date removed */}
                 
-                <div className="space-y-2">
+                <div className="space-y-2 w-full sm:max-w-xs">
                   <Label htmlFor="target_completion_date">Target Completion</Label>
                   <Input
                     id="target_completion_date"
@@ -393,42 +409,58 @@ export default function ProjectDashboard() {
                       ...prev, 
                       target_completion_date: (e.target.value ?? null) as string | null 
                     }))}
+                    className="w-full"
                   />
                 </div>
               </>
             ) : (
               <div className="space-y-4">
-                {project.description && (
-                  <div>
-                    <Label className="text-sm font-medium">Description</Label>
-                    <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
-                  </div>
-                )}
+                <div>
+                  <Label className="text-sm font-medium">Description</Label>
+                  <p className={`text-sm text-muted-foreground mt-1 ${
+                    project.description ? '' : 'italic'
+                  }`}>
+                    {project.description || 'Add a brief description to outline your project.'}
+                  </p>
+                </div>
 
-                {project.location && (
+                <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{project.location}</span>
-                  </div>
-                )}
-
-                {project.budget && (
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">
-                      Budget: {formatCurrency(project.budget)}
+                    <span className={`text-sm ${
+                      project.location ? '' : 'text-muted-foreground italic'
+                    }`}>
+                      {project.location || 'Add a location'}
                     </span>
                   </div>
-                )}
+                  <div className="flex items-center gap-2">
+                    <Flag className="h-4 w-4 text-muted-foreground" />
+                    <span className={`text-sm ${
+                      formattedStatus ? '' : 'text-muted-foreground italic'
+                    }`}>
+                      Status: {formattedStatus || 'Set project status'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <span className={`text-sm ${
+                      formattedBudget ? '' : 'text-muted-foreground italic'
+                    }`}>
+                      Budget: {formattedBudget || 'Add a budget'}
+                    </span>
+                  </div>
 
-                {/* start_date removed */}
-                
-                {project.target_completion_date && (
+                  {/* start_date removed */}
+
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Target Completion: {formatDisplayDate(project.target_completion_date)}</span>
+                    <span className={`text-sm ${
+                      formattedTargetDate ? '' : 'text-muted-foreground italic'
+                    }`}>
+                      Target Completion: {formattedTargetDate || 'Set a target completion date'}
+                    </span>
                   </div>
-                )}
+                </div>
               </div>
             )}
           </CardContent>
@@ -667,6 +699,7 @@ export default function ProjectDashboard() {
         </CardContent>
       </Card>
         </div>
+      </div>
       </LayoutApp>
     </MessagesProvider>
   )
