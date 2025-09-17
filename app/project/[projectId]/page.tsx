@@ -936,7 +936,7 @@ export default function ProjectDashboard() {
                     <span className={`text-sm ${
                       formattedStatus ? '' : 'text-muted-foreground italic'
                     }`}>
-                      {formattedStatus || 'Set project status'}
+                      Status: {formattedStatus || 'Set project status'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -944,7 +944,7 @@ export default function ProjectDashboard() {
                     <span className={`text-sm ${
                       formattedBudget ? '' : 'text-muted-foreground italic'
                     }`}>
-                      {formattedBudget || 'Add a budget'}
+                      Budget: {formattedBudget || 'Add a budget'}
                     </span>
                   </div>
 
@@ -955,7 +955,7 @@ export default function ProjectDashboard() {
                     <span className={`text-sm ${
                       formattedTargetDate ? '' : 'text-muted-foreground italic'
                     }`}>
-                      {formattedTargetDate || 'Set a target completion date'}
+                      Target Completion: {formattedTargetDate || 'Set a target completion date'}
                     </span>
                   </div>
                 </div>
