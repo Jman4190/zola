@@ -25,6 +25,7 @@ export type Database = {
           target_completion_date: string | null
           location: string | null
           project_details: Json | null
+          conversation_updates: string[] | null
           created_at: string
           updated_at: string
         }
@@ -41,6 +42,7 @@ export type Database = {
           target_completion_date?: string | null
           location?: string | null
           project_details?: Json | null
+          conversation_updates?: string[] | null
           created_at?: string
           updated_at?: string
         }
@@ -57,6 +59,7 @@ export type Database = {
           target_completion_date?: string | null
           location?: string | null
           project_details?: Json | null
+          conversation_updates?: string[] | null
           created_at?: string
           updated_at?: string
         }

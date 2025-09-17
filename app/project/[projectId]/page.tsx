@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -31,7 +30,8 @@ import {
   FileText,
   Flag
 } from "lucide-react"
-import type { BaseProject, RoomData } from "@/lib/project-schemas"
+import type { BaseProject } from "@/lib/project-schemas"
+import { cn } from "@/lib/utils"
 
 interface ProjectDetails extends BaseProject {
   completion: number
@@ -196,56 +196,514 @@ export default function ProjectDashboard() {
     }).format(new Date(date))
   }
 
-  const formatDetailValue = (value: any): string => {
-    if (value === null || value === undefined) return 'Not set'
-    if (value === '') return 'Not set'
-    if (value === 'unknown') return 'Unknown'
-    
-    if (typeof value === 'object' && value !== null) {
-      // Handle nested objects by formatting them nicely
-      const entries = Object.entries(value)
-      if (entries.length === 0) return 'Not set'
-      
-      return entries.map(([key, val]) => {
-        const formattedKey = key.replace(/_/g, ' ').toLowerCase()
-        let formattedValue = ''
-        
-        if (val === null || val === undefined || val === '') {
-          formattedValue = 'not set'
-        } else if (val === 'unknown') {
-          formattedValue = 'unknown'
-        } else if (typeof val === 'boolean') {
-          formattedValue = val ? 'yes' : 'no'
-        } else {
-          formattedValue = String(val)
-        }
-        
-        return `${formattedKey}: ${formattedValue}`
-      }).join(', ')
-    }
-    
-    // Handle boolean values
-    if (typeof value === 'boolean') {
-      return value ? 'Yes' : 'No'
-    }
-    
-    return String(value)
+  type ValueStatus = 'value' | 'unknown' | 'not_set'
+
+  interface ValueDescriptor {
+    display: string
+    status: ValueStatus
+  }
+
+  interface StructuredField {
+    key: string
+    label: string
+    value: string
+    status: ValueStatus
+  }
+
+  type SectionId =
+    | 'size_layout'
+    | 'general'
+    | 'finishes'
+    | 'fixtures'
+    | 'lighting'
+    | 'appliances'
+    | 'bath'
+    | 'storage'
+    | 'systems'
+    | 'features'
+    | 'notes'
+    | 'other'
+
+  interface StructuredSection {
+    id: SectionId
+    title: string
+    fields: StructuredField[]
+  }
+
+  interface FieldSchemaNode {
+    key: string
+    label?: string
+    section?: SectionId
+    formatter?: (value: unknown) => ValueDescriptor
+    children?: FieldSchemaNode[]
+  }
+
+  const SECTION_TITLES: Record<SectionId, string> = {
+    size_layout: 'Size & Layout',
+    general: 'General',
+    finishes: 'Finishes',
+    fixtures: 'Fixtures',
+    lighting: 'Lighting',
+    appliances: 'Appliances',
+    bath: 'Bath Features',
+    storage: 'Storage & Built-ins',
+    systems: 'Systems',
+    features: 'Features',
+    notes: 'Notes',
+    other: 'Additional Details'
+  }
+
+  const SECTION_ORDER: SectionId[] = [
+    'size_layout',
+    'general',
+    'finishes',
+    'fixtures',
+    'lighting',
+    'appliances',
+    'bath',
+    'storage',
+    'systems',
+    'features',
+    'notes',
+    'other'
+  ]
+
+  const TOP_LEVEL_SECTION_MAP: Record<string, SectionId> = {
+    size: 'size_layout',
+    layout: 'size_layout',
+    type: 'general',
+    paint: 'finishes',
+    flooring: 'finishes',
+    backsplash: 'finishes',
+    countertops: 'finishes',
+    cabinets: 'finishes',
+    windows: 'fixtures',
+    doors: 'fixtures',
+    plumbing: 'fixtures',
+    lighting: 'lighting',
+    appliances: 'appliances',
+    electrical: 'systems',
+    vanity: 'bath',
+    shower: 'bath',
+    bathtub: 'bath',
+    toilet: 'bath',
+    fireplace: 'features',
+    builtins: 'storage',
+    closet: 'storage',
+    notes: 'notes'
+  }
+
+  const LABEL_OVERRIDES: Record<string, string> = {
+    type: 'Room Type',
+    notes: 'Notes'
+  }
+
+  const isPlainObject = (value: unknown): value is Record<string, unknown> => {
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
   }
 
   const formatFieldName = (key: string): string => {
-    return key.replace(/_/g, ' ').split(' ').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ')
+    return key
+      .replace(/_/g, ' ')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
   }
 
-  const getAllFields = (details: any) => {
-    if (!details) return []
-    
-    return Object.entries(details).map(([key, value]) => ({
-      key,
-      label: formatFieldName(key),
-      value: formatDetailValue(value)
-    }))
+  const interpretValue = (value: unknown): ValueDescriptor => {
+    if (value === null || value === undefined || value === '') {
+      return { display: 'Not set', status: 'not_set' }
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+      if (!trimmed) {
+        return { display: 'Not set', status: 'not_set' }
+      }
+
+      const normalized = trimmed.toLowerCase()
+      if (normalized === 'unknown') {
+        return { display: 'Unknown', status: 'unknown' }
+      }
+
+      if (normalized === 'not set') {
+        return { display: 'Not set', status: 'not_set' }
+      }
+
+      return { display: trimmed, status: 'value' }
+    }
+
+    if (typeof value === 'boolean') {
+      return { display: value ? 'Yes' : 'No', status: 'value' }
+    }
+
+    if (typeof value === 'number') {
+      return { display: value.toString(), status: 'value' }
+    }
+
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return { display: 'Not set', status: 'not_set' }
+      }
+
+      const items = value
+        .map(item => interpretValue(item).display)
+        .filter(Boolean)
+
+      if (items.length === 0) {
+        return { display: 'Not set', status: 'not_set' }
+      }
+
+      return { display: items.join(', '), status: 'value' }
+    }
+
+    return { display: 'Unknown', status: 'unknown' }
+  }
+
+  const formatSizeValue = (value: unknown): ValueDescriptor => {
+    if (!isPlainObject(value)) {
+      if (value === 'unknown' || value === 'Unknown') {
+        return { display: 'Unknown', status: 'unknown' }
+      }
+      if (value === 'Not set') {
+        return { display: 'Not set', status: 'not_set' }
+      }
+    }
+
+    if (!isPlainObject(value)) {
+      return interpretValue(value)
+    }
+
+    const squareFeet = interpretValue(value.square_feet)
+    const length = interpretValue(value.length)
+    const width = interpretValue(value.width)
+
+    const hasSquareFeet = squareFeet.status === 'value'
+    const hasLength = length.status === 'value'
+    const hasWidth = width.status === 'value'
+
+    if (hasSquareFeet) {
+      return { display: `${squareFeet.display} sq ft`, status: 'value' }
+    }
+
+    if (hasLength && hasWidth) {
+      return { display: `${length.display} ft × ${width.display} ft`, status: 'value' }
+    }
+
+    if (hasLength) {
+      return { display: `${length.display} ft (length)`, status: 'value' }
+    }
+
+    if (hasWidth) {
+      return { display: `${width.display} ft (width)`, status: 'value' }
+    }
+
+    if (
+      squareFeet.status === 'unknown' ||
+      length.status === 'unknown' ||
+      width.status === 'unknown'
+    ) {
+      return { display: 'Unknown', status: 'unknown' }
+    }
+
+    return { display: 'Not set', status: 'not_set' }
+  }
+
+  const FIELD_BLUEPRINT: FieldSchemaNode[] = [
+    { key: 'size', label: 'Size', section: 'size_layout', formatter: formatSizeValue },
+    { key: 'layout', label: 'Layout', section: 'size_layout' },
+    { key: 'type', label: 'Room Type', section: 'general' },
+    {
+      key: 'paint',
+      section: 'finishes',
+      children: [
+        { key: 'color', label: 'Paint Color' },
+        { key: 'finish', label: 'Paint Finish' },
+        { key: 'accent_wall', label: 'Paint Accent Wall' }
+      ]
+    },
+    {
+      key: 'flooring',
+      section: 'finishes',
+      children: [
+        { key: 'material', label: 'Flooring Material' },
+        { key: 'color', label: 'Flooring Color' },
+        { key: 'pattern', label: 'Flooring Pattern' }
+      ]
+    },
+    {
+      key: 'backsplash',
+      section: 'finishes',
+      children: [
+        { key: 'material', label: 'Backsplash Material' },
+        { key: 'pattern', label: 'Backsplash Pattern' },
+        { key: 'color', label: 'Backsplash Color' }
+      ]
+    },
+    {
+      key: 'countertops',
+      section: 'finishes',
+      children: [
+        { key: 'material', label: 'Countertops Material' },
+        { key: 'color', label: 'Countertops Color' },
+        { key: 'edge_style', label: 'Countertops Edge Style' }
+      ]
+    },
+    {
+      key: 'cabinets',
+      section: 'finishes',
+      children: [
+        { key: 'style', label: 'Cabinets Style' },
+        { key: 'finish', label: 'Cabinets Finish' },
+        { key: 'material', label: 'Cabinets Material' },
+        { key: 'color', label: 'Cabinets Color' }
+      ]
+    },
+    {
+      key: 'windows',
+      section: 'fixtures',
+      children: [
+        { key: 'type', label: 'Windows Type' },
+        { key: 'treatment', label: 'Windows Treatment' },
+        { key: 'count', label: 'Windows Count' }
+      ]
+    },
+    {
+      key: 'doors',
+      section: 'fixtures',
+      children: [
+        { key: 'type', label: 'Doors Type' },
+        { key: 'count', label: 'Doors Count' }
+      ]
+    },
+    {
+      key: 'plumbing',
+      section: 'fixtures',
+      children: [
+        { key: 'sink_style', label: 'Plumbing Sink Style' },
+        { key: 'faucet_style', label: 'Plumbing Faucet Style' },
+        { key: 'sink_material', label: 'Plumbing Sink Material' }
+      ]
+    },
+    {
+      key: 'lighting',
+      section: 'lighting',
+      children: [
+        { key: 'overhead', label: 'Lighting Overhead' },
+        { key: 'recessed', label: 'Lighting Recessed' },
+        { key: 'pendant', label: 'Lighting Pendant' },
+        { key: 'undercabinet', label: 'Lighting Undercabinet' },
+        { key: 'chandelier', label: 'Lighting Chandelier' },
+        { key: 'table_lamps', label: 'Lighting Table Lamps' },
+        { key: 'floor_lamps', label: 'Lighting Floor Lamps' },
+        { key: 'accent', label: 'Lighting Accent' },
+        { key: 'vanity', label: 'Lighting Vanity' },
+        { key: 'shower', label: 'Lighting Shower' }
+      ]
+    },
+    {
+      key: 'appliances',
+      section: 'appliances',
+      children: [
+        { key: 'range', label: 'Appliances Range' },
+        { key: 'refrigerator', label: 'Appliances Refrigerator' },
+        { key: 'dishwasher', label: 'Appliances Dishwasher' },
+        { key: 'microwave', label: 'Appliances Microwave' },
+        { key: 'disposal', label: 'Appliances Disposal' }
+      ]
+    },
+    {
+      key: 'electrical',
+      section: 'systems',
+      children: [
+        { key: 'needs_upgrade', label: 'Electrical Needs Upgrade' },
+        { key: 'outlets_adequate', label: 'Electrical Outlets Adequate' },
+        { key: 'smart_home', label: 'Electrical Smart Home' }
+      ]
+    },
+    {
+      key: 'vanity',
+      section: 'bath',
+      children: [
+        { key: 'style', label: 'Vanity Style' },
+        { key: 'material', label: 'Vanity Material' },
+        { key: 'countertop', label: 'Vanity Countertop' }
+      ]
+    },
+    {
+      key: 'shower',
+      section: 'bath',
+      children: [
+        { key: 'type', label: 'Shower Type' },
+        { key: 'door_type', label: 'Shower Door Type' },
+        { key: 'tile_material', label: 'Shower Tile Material' }
+      ]
+    },
+    {
+      key: 'bathtub',
+      section: 'bath',
+      children: [
+        { key: 'type', label: 'Bathtub Type' },
+        { key: 'material', label: 'Bathtub Material' }
+      ]
+    },
+    {
+      key: 'toilet',
+      section: 'bath',
+      children: [
+        { key: 'type', label: 'Toilet Type' }
+      ]
+    },
+    {
+      key: 'fireplace',
+      section: 'features',
+      children: [
+        { key: 'type', label: 'Fireplace Type' },
+        { key: 'surround', label: 'Fireplace Surround' }
+      ]
+    },
+    {
+      key: 'builtins',
+      section: 'storage',
+      children: [
+        { key: 'entertainment_center', label: 'Built-ins Entertainment Center' },
+        { key: 'bookshelves', label: 'Built-ins Bookshelves' },
+        { key: 'window_seat', label: 'Built-ins Window Seat' }
+      ]
+    },
+    {
+      key: 'closet',
+      section: 'storage',
+      children: [
+        { key: 'type', label: 'Closet Type' },
+        { key: 'organization', label: 'Closet Organization' }
+      ]
+    },
+    { key: 'notes', label: 'Notes', section: 'notes' }
+  ]
+
+  const deriveLabel = (segments: string[], explicit?: string): string => {
+    if (explicit) return explicit
+
+    const fullPath = segments.join('.')
+    if (LABEL_OVERRIDES[fullPath]) return LABEL_OVERRIDES[fullPath]
+
+    const lastSegment = segments[segments.length - 1]
+    if (LABEL_OVERRIDES[lastSegment]) return LABEL_OVERRIDES[lastSegment]
+
+    if (segments.length > 1) {
+      const parent = segments[segments.length - 2]
+      const parentLabel = LABEL_OVERRIDES[parent] ?? formatFieldName(parent)
+      const currentLabel = formatFieldName(lastSegment)
+      if (!currentLabel.toLowerCase().includes(parentLabel.toLowerCase())) {
+        return `${parentLabel} ${currentLabel}`
+      }
+    }
+
+    return formatFieldName(lastSegment)
+  }
+
+  const getSectionForPath = (segments: string[], fallback?: SectionId): SectionId => {
+    if (fallback) return fallback
+    const topLevel = segments[0]
+    return TOP_LEVEL_SECTION_MAP[topLevel] ?? 'other'
+  }
+
+  const getStructuredSections = (details: unknown): StructuredSection[] => {
+    const sourceDetails = isPlainObject(details) ? details : {}
+    const sections: Partial<Record<SectionId, StructuredSection>> = {}
+
+    const ensureSection = (id: SectionId) => {
+      if (!sections[id]) {
+        sections[id] = {
+          id,
+          title: SECTION_TITLES[id],
+          fields: []
+        }
+      }
+      return sections[id]
+    }
+
+    const pushField = (
+      sectionId: SectionId,
+      pathSegments: string[],
+      labelOverride: string | undefined,
+      descriptor: ValueDescriptor
+    ) => {
+      const section = ensureSection(sectionId)
+      section.fields.push({
+        key: pathSegments.join('.'),
+        label: deriveLabel(pathSegments, labelOverride),
+        value: descriptor.display,
+        status: descriptor.status
+      })
+    }
+
+    const processNode = (
+      node: FieldSchemaNode,
+      value: unknown,
+      pathSegments: string[],
+      inheritedSection?: SectionId
+    ) => {
+      const section = node.section ?? inheritedSection ?? getSectionForPath(pathSegments, inheritedSection)
+
+      if (node.children && node.children.length > 0) {
+        const source = isPlainObject(value) ? value : undefined
+        node.children.forEach(child => {
+          const childValue = source ? source[child.key] : undefined
+          processNode(child, childValue, [...pathSegments, child.key], section)
+        })
+
+        if (source) {
+          Object.entries(source).forEach(([childKey, childValue]) => {
+            if (!node.children?.some(child => child.key === childKey)) {
+              processNode({ key: childKey }, childValue, [...pathSegments, childKey], section)
+            }
+          })
+        }
+        return
+      }
+
+      if (!node.formatter && isPlainObject(value)) {
+        const entries = Object.entries(value)
+        if (entries.length === 0) {
+          pushField(section, pathSegments, node.label, interpretValue(undefined))
+        } else {
+          entries.forEach(([childKey, childValue]) => {
+            processNode({ key: childKey }, childValue, [...pathSegments, childKey], section)
+          })
+        }
+        return
+      }
+
+      const descriptor = node.formatter ? node.formatter(value) : interpretValue(value)
+      pushField(section, pathSegments, node.label, descriptor)
+    }
+
+    FIELD_BLUEPRINT.forEach(node => {
+      if (!Object.prototype.hasOwnProperty.call(sourceDetails, node.key)) {
+        return
+      }
+
+      const value = sourceDetails[node.key]
+      processNode(node, value, [node.key], node.section)
+    })
+
+    Object.entries(sourceDetails).forEach(([key, value]) => {
+      if (!FIELD_BLUEPRINT.some(node => node.key === key)) {
+        processNode({ key }, value, [key])
+      }
+    })
+
+    const orderedSections: StructuredSection[] = []
+    SECTION_ORDER.forEach(sectionId => {
+      const section = sections[sectionId]
+      if (section && section.fields.length > 0) {
+        orderedSections.push(section)
+      }
+    })
+
+    return orderedSections
   }
 
   const getCategoryIcon = (category?: string) => {
@@ -368,7 +826,7 @@ export default function ProjectDashboard() {
                   <Label htmlFor="status">Status</Label>
                   <Select 
                     value={editData.status || 'planning'} 
-                    onValueChange={(value) => setEditData(prev => ({ ...prev, status: value as any }))}
+                    onValueChange={(value) => setEditData(prev => ({ ...prev, status: value as BaseProject['status'] }))}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -438,7 +896,7 @@ export default function ProjectDashboard() {
                     <span className={`text-sm ${
                       formattedStatus ? '' : 'text-muted-foreground italic'
                     }`}>
-                      Status: {formattedStatus || 'Set project status'}
+                      {formattedStatus || 'Set project status'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -446,7 +904,7 @@ export default function ProjectDashboard() {
                     <span className={`text-sm ${
                       formattedBudget ? '' : 'text-muted-foreground italic'
                     }`}>
-                      Budget: {formattedBudget || 'Add a budget'}
+                      {formattedBudget || 'Add a budget'}
                     </span>
                   </div>
 
@@ -457,7 +915,7 @@ export default function ProjectDashboard() {
                     <span className={`text-sm ${
                       formattedTargetDate ? '' : 'text-muted-foreground italic'
                     }`}>
-                      Target Completion: {formattedTargetDate || 'Set a target completion date'}
+                      {formattedTargetDate || 'Set a target completion date'}
                     </span>
                   </div>
                 </div>
@@ -520,43 +978,65 @@ export default function ProjectDashboard() {
               <div className="space-y-4">
                 {(() => {
                   const area = project.project_details[0]
-                  const allFields = getAllFields(area.details)
-                  
-                  return (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="font-medium">
-                          {area.name}
-                        </Badge>
-                      </div>
-                      
-                      {allFields.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {allFields.map(field => {
-                            const isUnknown = field.value === 'Unknown' || field.value.includes('unknown')
-                            const isNotSet = field.value === 'Not set' || field.value.includes('not set')
-                            
-                            return (
-                              <div key={field.key}>
-                                <Label className="text-sm font-medium text-muted-foreground">
-                                  {field.label}
-                                </Label>
-                                <p className={`text-sm font-medium mt-1 ${
-                                  isNotSet ? 'text-muted-foreground italic' : 
-                                  isUnknown ? 'text-amber-600' : 
-                                  'text-foreground'
-                                }`}>
-                                  {field.value}
-                                </p>
-                              </div>
-                            )
-                          })}
+                  const sections = getStructuredSections(area.details)
+                  const fieldCount = sections.reduce((total, section) => total + section.fields.length, 0)
+
+                  if (fieldCount === 0) {
+                    return (
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="secondary" className="font-medium">
+                            {area.name}
+                          </Badge>
                         </div>
-                      ) : (
                         <p className="text-sm text-muted-foreground">
                           No details specified yet. Chat with the assistant to add information.
                         </p>
-                      )}
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div className="space-y-6">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary" className="font-medium">
+                          {area.name}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs font-medium text-muted-foreground">
+                          {fieldCount} {fieldCount === 1 ? 'field' : 'fields'}
+                        </Badge>
+                      </div>
+
+                      <div className="overflow-hidden rounded-lg border border-muted bg-background shadow-sm">
+                        {sections.map((section, index) => (
+                          <div
+                            key={section.id}
+                            className={cn('p-4 md:p-6', index !== 0 && 'border-t border-muted/60')}
+                          >
+                            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              {section.title}
+                            </h4>
+                            <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
+                              {section.fields.map(field => (
+                                <div key={field.key} className="space-y-1">
+                                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
+                                    {field.label}
+                                  </p>
+                                  <p
+                                    className={cn(
+                                      'text-sm font-medium',
+                                      field.status === 'not_set' && 'text-muted-foreground italic',
+                                      field.status === 'unknown' && 'text-amber-600'
+                                    )}
+                                  >
+                                    {field.value}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )
                 })()}
@@ -577,39 +1057,53 @@ export default function ProjectDashboard() {
                 </TabsList>
                 
                 {project.project_details.map((area, index) => {
-                  const allFields = getAllFields(area.details)
-                  
+                  const sections = getStructuredSections(area.details)
+                  const fieldCount = sections.reduce((total, section) => total + section.fields.length, 0)
+
                   return (
-                    <TabsContent key={index} value={index.toString()} className="space-y-4 mt-6">
-                      <div className="border-l-4 border-primary pl-4 mb-4">
-                        <h3 className="text-lg font-semibold text-foreground">{area.name}</h3>
-                        <p className="text-sm text-muted-foreground">Room details and specifications</p>
+                    <TabsContent key={index} value={index.toString()} className="space-y-6 mt-6">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary" className="font-medium">
+                          {area.name}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs font-medium text-muted-foreground">
+                          {fieldCount} {fieldCount === 1 ? 'field' : 'fields'}
+                        </Badge>
                       </div>
-                      
-                      {allFields.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {allFields.map(field => {
-                            const isUnknown = field.value === 'Unknown' || field.value.includes('unknown')
-                            const isNotSet = field.value === 'Not set' || field.value.includes('not set')
-                            
-                            return (
-                              <div key={field.key} className="space-y-1">
-                                <Label className="text-sm font-medium text-muted-foreground">
-                                  {field.label}
-                                </Label>
-                                <p className={`text-sm font-medium ${
-                                  isNotSet ? 'text-muted-foreground italic' : 
-                                  isUnknown ? 'text-amber-600' : 
-                                  'text-foreground'
-                                }`}>
-                                  {field.value}
-                                </p>
+
+                      {fieldCount > 0 ? (
+                        <div className="overflow-hidden rounded-lg border border-muted bg-background shadow-sm">
+                          {sections.map((section, sectionIndex) => (
+                            <div
+                              key={section.id}
+                              className={cn('p-4 md:p-6', sectionIndex !== 0 && 'border-t border-muted/60')}
+                            >
+                              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                {section.title}
+                              </h4>
+                              <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2">
+                                {section.fields.map(field => (
+                                  <div key={field.key} className="space-y-1">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
+                                      {field.label}
+                                    </p>
+                                    <p
+                                      className={cn(
+                                        'text-sm font-medium',
+                                        field.status === 'not_set' && 'text-muted-foreground italic',
+                                        field.status === 'unknown' && 'text-amber-600'
+                                      )}
+                                    >
+                                      {field.value}
+                                    </p>
+                                  </div>
+                                ))}
                               </div>
-                            )
-                          })}
+                            </div>
+                          ))}
                         </div>
                       ) : (
-                        <div className="text-center py-8 border-2 border-dashed border-muted rounded-lg">
+                        <div className="rounded-lg border-2 border-dashed border-muted p-8 text-center">
                           <p className="text-sm text-muted-foreground mb-2">
                             No details specified yet for {area.name}
                           </p>
