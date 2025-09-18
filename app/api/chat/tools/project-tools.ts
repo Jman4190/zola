@@ -150,6 +150,8 @@ export const updateProjectTool = (userId: string) => tool({
       description: z.string().optional(),
       location: z.string().optional(),
       status: z.enum(['planning', 'in_progress', 'completed', 'on_hold']).optional(),
+      budget: z.number().optional().describe("Project budget amount in dollars"),
+      target_completion_date: z.string().optional().describe("Target completion date in YYYY-MM-DD format"),
       projectUpdates: z.array(z.object({
         areaName: z.string(),
         details: z.record(z.any()).describe("Area-specific details to update")
@@ -195,6 +197,16 @@ export const updateProjectTool = (userId: string) => tool({
       if (updates.description) updateData.description = updates.description
       if (updates.location) updateData.location = updates.location
       if (updates.status) updateData.status = updates.status
+      if (updates.budget !== undefined) {
+        if (updates.budget < 0) {
+          return {
+            success: false,
+            error: "Budget cannot be negative"
+          }
+        }
+        updateData.budget = updates.budget
+      }
+      if (updates.target_completion_date) updateData.target_completion_date = updates.target_completion_date
 
       // Handle project area updates
       if (updates.projectUpdates && updates.projectUpdates.length > 0) {
@@ -274,6 +286,7 @@ export const updateProjectTool = (userId: string) => tool({
           id: updatedProject.id,
           name: updatedProject.name,
           status: updatedProject.status,
+          budget: updatedProject.budget,
           lastUpdated: updatedProject.updated_at
         },
         message: "Project information updated successfully!"

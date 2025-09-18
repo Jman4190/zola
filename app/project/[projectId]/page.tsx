@@ -1062,15 +1062,7 @@ export default function ProjectDashboard() {
                                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
                                     {field.label}
                                   </p>
-                                  <p
-                                    className={cn(
-                                      'text-sm font-medium',
-                                      field.status === 'not_set' && 'text-muted-foreground italic',
-                                      field.status === 'unknown' && 'text-amber-600'
-                                    )}
-                                  >
-                                    {field.value}
-                                  </p>
+                                  {renderFieldValue(field)}
                                 </div>
                               ))}
                             </div>
@@ -1127,15 +1119,7 @@ export default function ProjectDashboard() {
                                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground/80">
                                       {field.label}
                                     </p>
-                                    <p
-                                      className={cn(
-                                        'text-sm font-medium',
-                                        field.status === 'not_set' && 'text-muted-foreground italic',
-                                        field.status === 'unknown' && 'text-amber-600'
-                                      )}
-                                    >
-                                      {field.value}
-                                    </p>
+                                    {renderFieldValue(field)}
                                   </div>
                                 ))}
                               </div>

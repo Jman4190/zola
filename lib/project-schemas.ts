@@ -182,7 +182,7 @@ export function validateProjectData(data: Partial<BaseProject>): { valid: boolea
     errors.push('Invalid project status')
   }
 
-  if (data.budget !== undefined && data.budget < 0) {
+  if (data.budget !== undefined && data.budget !== null && data.budget < 0) {
     errors.push('Budget cannot be negative')
   }
 
